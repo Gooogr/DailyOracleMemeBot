@@ -3,6 +3,7 @@ FROM python:3.10-slim
 
 # Ensure output is immediately flushed to the terminal
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 # Set the working directory
 WORKDIR /app
@@ -15,4 +16,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Run the bot when the container launches
-CMD ["python", "main.py"]
+CMD ["python", "app/main.py"]

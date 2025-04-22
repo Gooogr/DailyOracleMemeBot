@@ -2,7 +2,7 @@ import telebot
 
 
 class MemeOracleBot:
-    def __init__(self, token, meme_service):
+    def __init__(self, meme_service, token):
         self.bot = telebot.TeleBot(token)
         self.service = meme_service
         self._register_handlers()
