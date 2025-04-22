@@ -17,10 +17,10 @@ if not BOT_TOKEN:
 
 def main():
     storage = MinioStorage(
-        "minio:9000",
+        endpoint="minio:9000",
         access_key=os.getenv("MINIO_ROOT_USER"),
         secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
-        bucket_name="test",  # TODO: add to .env config
+        bucket_name=os.getenv("MINIO_BUCKET_NAME"),
     )
     service = MemeOracleService(storage)
     bot = MemeOracleBot(BOT_TOKEN, service)
