@@ -1,24 +1,15 @@
-import os
 import random
 from functools import lru_cache
 from io import BytesIO
 from typing import List
 
-from minio import Minio
-
 from app.storage.base import AbstractStorage
 
 
-# TODO: separate client and make it testable
 class MinIOStorage(AbstractStorage):
-    def __init__(self):
-        self.client = Minio(
-            endpoint="minio:9000",
-            access_key=os.getenv("MINIO_ROOT_USER"),
-            secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
-            secure=False,
-        )
-        self.bucket_name = os.getenv("MINIO_BUCKET_NAME")
+    def __init__(self, client, bucket_name):
+        self.client = client
+        self.bucket_name = bucket_name
 
     @lru_cache
     def list_objects(self) -> List[str]:
