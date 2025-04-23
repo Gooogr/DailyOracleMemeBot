@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   telegram_bot:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/telegram_bot/Dockerfile
     container_name: telegram_bot
     env_file:
       - .env
