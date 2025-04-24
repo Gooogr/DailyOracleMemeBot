@@ -175,6 +175,3 @@ cython_debug/
 
 #Pynev
 .python-version
-
-#nginx
-docker/nginx/prod/htpasswd.users
