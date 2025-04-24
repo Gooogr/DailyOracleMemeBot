@@ -177,4 +177,4 @@ cython_debug/
 .python-version
 
 #nginx
-docker/nginx/prod/ssl
+docker/nginx/prod/htpasswd.users

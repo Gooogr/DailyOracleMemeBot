@@ -38,6 +38,7 @@ services:
       - "8080:80"
     volumes:
       - ./docker/nginx/prod/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/prod/htpasswd.users:/etc/nginx/htpasswd.users:ro
     depends_on:
       - minio
     networks:
