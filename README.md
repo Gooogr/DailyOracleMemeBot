@@ -2,17 +2,13 @@
 
 ## Deploy
 
-Create password for Minio UI proxy
-```bash
-chmod +x ./scripts/create_htpasswd.sh
-./scripts/create_htpasswd.sh [username]
-```
-default `[username]` is `admin`
-
 Run docker
 ```bash
 docker compose -f docker-compose.prod.yaml up --build
 ```
 
 
-
+TODO:
+- add self-signed certificate
+- use ssh + VPS localhost 443 listening 
+- use iptables to close ports except local host
