@@ -2,18 +2,19 @@ version: '3.8'
 
 services:
   telegram_bot:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/telegram_bot/Dockerfile
     container_name: telegram_bot
     env_file:
       - .env
     restart: unless-stopped
+    networks:
+      - app_net
 
   minio:
     image: minio/minio:latest
     command: server --console-address ":9001" /data/
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     env_file:
       - .env
     environment:
@@ -26,6 +27,26 @@ services:
       retries: 3
     volumes:
       - minio-storage:/data
+    networks:
+      - app_net
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    restart: unless-stopped
+    ports:
+      - "443:443"
+    volumes:
+      - ./docker/nginx/prod/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/prod/logs:/var/log/nginx/
+      - ./docker/nginx/prod/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - minio
+    networks:
+      - app_net
 
 volumes:
   minio-storage:
+
+networks:
+  app_net:

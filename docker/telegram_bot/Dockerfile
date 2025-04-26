@@ -9,11 +9,11 @@ ENV PYTHONPATH=/app
 WORKDIR /app
 
 # Copy the requirements file and install dependencies
-COPY requirements.txt .
+COPY ../../requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Copy the rest of the application code
-COPY . .
+COPY ../.. .
 
 # Run the bot when the container launches
 CMD ["python", "app/main.py"]
