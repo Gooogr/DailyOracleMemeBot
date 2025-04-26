@@ -9,6 +9,8 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    networks:
+      - app_net
 
   minio:
     image: minio/minio:latest
@@ -28,6 +30,8 @@ services:
       retries: 3
     volumes:
       - minio-storage:/data
+    networks:
+      - app_net
 
   nginx:
     image: nginx:latest
@@ -36,8 +40,12 @@ services:
       - "8080:80"
     volumes:
       - ./docker/nginx/test/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/prod/logs:/var/log/nginx/
     depends_on:
       - minio
+      - adminer
+    networks:
+      - app_net
 
   postgres:
       image: postgres:16-alpine
@@ -46,11 +54,19 @@ services:
         POSTGRES_DB: ${POSTGRES_DB}
         POSTGRES_USER: ${POSTGRES_USER}
         POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      healthcheck:
+        test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'" ]
+        interval: 30s
+        timeout: 60s
+        retries: 5
+        start_period: 80s
       ports:
         - "5432:5432"
       volumes:
         - postgres_data:/var/lib/postgresql/data
         - ./docker/postgres/initdb:/docker-entrypoint-initdb.d
+      networks:
+        - app_net
 
 
   adminer:
@@ -58,8 +74,13 @@ services:
     restart: unless-stopped
     ports:
       - "8081:8080"
+    networks:
+      - app_net
 
 
 volumes:
   minio-storage:
   postgres_data:
+
+networks:
+  app_net:

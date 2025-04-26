@@ -42,6 +42,7 @@ services:
       - ./docker/nginx/prod/ssl:/etc/nginx/ssl:ro
     depends_on:
       - minio
+      - adminer
     networks:
       - app_net
 
