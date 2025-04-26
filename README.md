@@ -2,6 +2,12 @@
 
 ## Deploy
 
+Create self-signed certificate
+```bash
+chmod +x ./scripts/nginx/generate-cert.sh
+./scripts/nginx/generate-cert.sh
+```
+
 Run docker
 ```bash
 docker compose -f docker-compose.prod.yaml up --build
