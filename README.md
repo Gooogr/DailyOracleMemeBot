@@ -13,8 +13,11 @@ Run docker
 docker compose -f docker-compose.prod.yaml up --build
 ```
 
+How to open minio admin panel
+```bash
+ssh -L 8443:localhost:443 your-user@your-vps-ip
+https://localhost:8443/
+```
 
-TODO:
-- add self-signed certificate
-- use ssh + VPS localhost 443 listening 
-- use iptables to close ports except local host
+So basically we:
+Browser → localhost:8443 → SSH tunnel → VPS localhost:443 → Nginx HTTPS → MinIO Console
