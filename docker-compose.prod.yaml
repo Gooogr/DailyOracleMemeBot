@@ -45,8 +45,28 @@ services:
     networks:
       - app_net
 
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_net
+
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    networks:
+      - app_net
+
+
 volumes:
   minio-storage:
+  postgres_data:
 
 networks:
   app_net:
