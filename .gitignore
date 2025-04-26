@@ -178,4 +178,4 @@ cython_debug/
 
 #nginx
 docker/nginx/prod/ssl
-docker/nginx/prod/logs
+docker/nginx/*/logs
