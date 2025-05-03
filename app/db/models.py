@@ -9,7 +9,7 @@ class Base(DeclarativeBase):
     pass
 
 
-class Items(Base):
+class Item(Base):
     __tablename__ = "items"
     id: Mapped[str] = mapped_column(String())
     type: Mapped[str] = mapped_column(String(10))
@@ -21,7 +21,7 @@ class Items(Base):
         return f"Item(id={self.id!r}, type={self.type!r}, upload_dt={self.upload_dt!r})"
 
 
-class Interactions(Base):
+class Interaction(Base):
     __tablename__ = "interactions"
     user_id: Mapped[str] = mapped_column(String())
     item_id: Mapped[str] = mapped_column(ForeignKey("items.id"))
