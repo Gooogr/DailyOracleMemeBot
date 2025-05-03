@@ -11,7 +11,7 @@ class MemeOracleBot:
         @self.bot.message_handler(commands=["ask_oracle"])
         def handle_ask_oracle(message):
             meme = self.service.get_object()
-            if meme:  # TODO: check that object is image
+            if meme:  # TODO: check that object is image or video
                 self.bot.send_photo(message.chat.id, meme)
             else:
                 self.bot.reply_to(message, "No prophecies found.")
