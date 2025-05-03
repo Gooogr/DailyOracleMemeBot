@@ -1,7 +1,13 @@
-from sqlalchemy.orm import Session
 from datetime import datetime
-from app.db.models import Item, Interaction
-from app.db.repository_interface import AbstractItemRepository, AbstractInteractionRepository
+
+from sqlalchemy.orm import Session
+
+from app.db.models import Interaction, Item
+from app.db.repository_interface import (
+    AbstractInteractionRepository,
+    AbstractItemRepository,
+)
+
 
 class PostgresItemRepository(AbstractItemRepository):
     def __init__(self, db: Session):
@@ -16,12 +22,17 @@ class PostgresItemRepository(AbstractItemRepository):
     def get_item(self, item_id: str):
         return self.db.query(Item).filter(Item.id == item_id).first()
 
+
 class PostgresInteractionRepository(AbstractInteractionRepository):
     def __init__(self, db: Session):
         self.db = db
 
-    def save_interaction(self, user_id: str, item_id: str, interaction_datetime: datetime):
-        interaction = Interaction(user_id=user_id, item_id=item_id, interaction_dt=interaction_datetime)
+    def save_interaction(
+        self, user_id: str, item_id: str, interaction_datetime: datetime
+    ):
+        interaction = Interaction(
+            user_id=user_id, item_id=item_id, interaction_dt=interaction_datetime
+        )
         self.db.add(interaction)
         self.db.commit()
         return interaction
