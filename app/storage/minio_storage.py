@@ -20,7 +20,10 @@ class MinIOStorage(AbstractStorage):
         return data
 
     def list_objects(self) -> List[str]:
-        return [obj.object_name for obj in self.client.list_objects(self.bucket_name, recursive=True)]
+        return [
+            obj.object_name
+            for obj in self.client.list_objects(self.bucket_name, recursive=True)
+        ]
 
     def get_random_object(self) -> BytesIO:
         obj_name = random.choice(self.list_objects())
