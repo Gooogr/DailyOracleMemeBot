@@ -10,11 +10,16 @@ class MemeOracleBot:
     def _register_handlers(self):
         @self.bot.message_handler(commands=["ask_oracle"])
         def handle_ask_oracle(message):
-            meme = self.service.get_object()
-            if meme:  # TODO: check that object is image or video
-                self.bot.send_photo(message.chat.id, meme)
-            else:
+            # TODO: select object ID from DB  # should be in service layer, not in bots handler!!!
+            # TODO: get object by ID
+            meme = self.service.get_random_object()
+            # TODO: validate object
+            if not meme:
                 self.bot.reply_to(message, "No prophecies found.")
+                return
+            # TODO: send img/video
+            self.bot.send_photo(message.chat.id, meme)
+            # TODO: update Ineractions table in DB
 
     def run(self):
         self.bot.infinity_polling()
