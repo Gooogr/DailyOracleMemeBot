@@ -3,7 +3,7 @@ from functools import lru_cache
 from io import BytesIO
 from typing import List
 
-from app.storage.base import AbstractStorage
+from app.storage.storage_interface import AbstractStorage
 
 
 class MinIOStorage(AbstractStorage):
