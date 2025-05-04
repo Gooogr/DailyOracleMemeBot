@@ -178,3 +178,6 @@ cython_debug/
 
 #nginx
 docker/nginx/prod/ssl/*
+
+#scripts
+*.session

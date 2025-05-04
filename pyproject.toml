@@ -12,6 +12,8 @@ python = "^3.10"
 python-dotenv = "^1.1.0"
 pytelegrambotapi = "^4.26.0"
 minio = "^7.2.15"
+pyrogram = "^2.0.106"
+tgcrypto = "^1.2.5"
 
 [tool.poetry.group.dev.dependencies]
 black = "24.4.2"
