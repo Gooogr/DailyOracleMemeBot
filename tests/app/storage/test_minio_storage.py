@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from io import BytesIO
 from minio.error import S3Error, MinioException
 
@@ -32,23 +32,22 @@ def test_get_object_success(storage, mock_minio_client):
 
 
 def test_get_object_s3_error(storage, mock_minio_client):
-    def test_get_object_s3_error(storage, mock_minio_client):
-        mock_response = MagicMock()
-        mock_response.read.return_value = b"error"
+    mock_response = MagicMock()
+    mock_response.read.return_value = b"error"
 
-        error = S3Error(
-            code="NoSuchKey",
-            message="Object not found",
-            resource="/test-bucket/test-object",
-            request_id="1234",
-            host_id="localhost",
-            response=mock_response,
-        )
+    error = S3Error(
+        code="NoSuchKey",
+        message="Object not found",
+        resource="/test-bucket/test-object",
+        request_id="1234",
+        host_id="localhost",
+        response=mock_response,
+    )
 
-        mock_minio_client.get_object.side_effect = error
+    mock_minio_client.get_object.side_effect = error
 
-        with pytest.raises(S3Error):
-            storage.get_object("bad-object")
+    with pytest.raises(S3Error):
+        storage.get_object("bad-object")
 
 
 def test_get_object_minio_error(storage, mock_minio_client):
