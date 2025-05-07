@@ -6,7 +6,10 @@ authors = ["Your Name <you@example.com>"]
 license = "MIT"
 readme = "README.md"
 package-mode = false
-
+packages = [
+    { include = "app"},
+    { include = "sync_worker"},
+]
 [tool.poetry.dependencies]
 python = "^3.10"
 python-dotenv = "^1.1.0"
@@ -29,3 +32,10 @@ pytest = "8.1.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra"
+testpaths = [
+    "tests",
+]
