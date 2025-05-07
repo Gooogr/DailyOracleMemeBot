@@ -27,6 +27,34 @@ services:
     networks:
       - app_net
 
+  minio-setup:
+    build:
+      context: .
+      dockerfile: docker/minio_mc/Dockerfile
+    container_name: minio_setup
+    depends_on:
+      - minio
+      - sync-worker
+    env_file:
+      - .env
+    networks:
+      - app_net
+    restart: "no"
+
+  sync-worker:
+    build:
+      context: .
+      dockerfile: docker/sync_worker/Dockerfile
+    container_name: sync_worker
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - minio
+    env_file:
+      - .env
+    networks:
+      - app_net
+
   nginx:
     image: nginx:latest
     container_name: nginx_proxy
@@ -70,20 +98,7 @@ services:
     networks:
       - app_net
 
-  sync-worker:
-    build:
-      context: .
-      dockerfile: docker/sync_worker/Dockerfile
-    container_name: sync_worker
-    restart: unless-stopped
-    depends_on:
-      - postgres
-      - minio
-    env_file:
-      - .env
-    networks:
-      - app_net
-    entrypoint: ["/bin/sh", "-c", "/src/sync_worker/setup_and_run.sh"]
+
 
 volumes:
   minio-storage:

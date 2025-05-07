@@ -10,7 +10,7 @@ chmod +x ./scripts/nginx/generate-cert.sh
 
 Enable minio webhook setup script
 ```bash
-chmod +x ./scripts/minio/setup_webhook.sh
+chmod +x ./scripts/minio/minio_setup.sh
 ```
 
 Run docker
