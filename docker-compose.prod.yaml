@@ -17,9 +17,6 @@ services:
     command: server --console-address ":9001" /data/
     env_file:
       - .env
-    environment:
-      MINIO_ROOT_USER: $MINIO_ROOT_USER
-      MINIO_ROOT_PASSWORD: $MINIO_ROOT_PASSWORD
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 30s
@@ -49,6 +46,8 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -71,6 +70,20 @@ services:
     networks:
       - app_net
 
+  sync-worker:
+    build:
+      context: .
+      dockerfile: docker/sync_worker/Dockerfile
+    container_name: sync_worker
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - minio
+    env_file:
+      - .env
+    networks:
+      - app_net
+    entrypoint: ["/bin/sh", "-c", "/src/sync_worker/setup_and_run.sh"]
 
 volumes:
   minio-storage:
