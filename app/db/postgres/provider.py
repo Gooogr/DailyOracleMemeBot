@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from app.db.db_interface import AbstractDatabaseProvider
 
 
-class PostgresDatabaseProvider(AbstractDatabaseProvider):
+class PostgresProvider(AbstractDatabaseProvider):
     def __init__(
         self,
         user: str,

@@ -12,4 +12,3 @@ class MemeOracleService:
 
     def get_random_object(self):
         return self.storage.get_random_object()
-
