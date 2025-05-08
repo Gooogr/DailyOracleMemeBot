@@ -10,29 +10,35 @@ from app.db.repository_interface import (
 
 
 class PostgresItemRepository(AbstractItemRepository):
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self, session: Session):
+        self.session = session
 
     def add_item(self, item_id: str, item_type: str, upload_datetime: datetime):
         item = Item(id=item_id, type=item_type, upload_dt=upload_datetime)
-        self.db.add(item)
-        self.db.commit()
-        return item
+        self.session.add(item)
+        self.session.commit()
+        return item  # TODO: remove return???
 
     def get_item(self, item_id: str):
-        return self.db.query(Item).filter(Item.id == item_id).first()
+        return self.session.query(Item).filter(Item.id == item_id).first()
+
+    def delete_item(self, item_id: str):
+        item = Item(id=item_id)
+        self.session.delete(item)
+        self.session.commit()
+        return
 
 
 class PostgresInteractionRepository(AbstractInteractionRepository):
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self, session: Session):
+        self.session = session
 
-    def save_interaction(
+    def add_interaction(
         self, user_id: str, item_id: str, interaction_datetime: datetime
     ):
         interaction = Interaction(
             user_id=user_id, item_id=item_id, interaction_dt=interaction_datetime
         )
-        self.db.add(interaction)
-        self.db.commit()
+        self.session.add(interaction)
+        self.session.commit()
         return interaction

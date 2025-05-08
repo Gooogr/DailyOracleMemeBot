@@ -1,0 +1,53 @@
+from datetime import datetime
+
+from app.db.factory_interface import AbstractItemRepositoryFactory
+from app.db.provider_interface import AbstractDatabaseProvider
+from app.db.repository_interface import AbstractItemRepository
+from sync_worker.event_models import MinioWebhookPayload
+
+
+class MinioEventHandler:
+    def __init__(
+        self,
+        provider: AbstractDatabaseProvider,
+        item_repo_factory: AbstractItemRepositoryFactory,
+    ):
+        self.provider = provider
+        self.item_repo_factory = item_repo_factory
+
+    def handle_event(self, event: MinioWebhookPayload) -> None:
+        session = self.provider.get_session()
+        repo = self.item_repo_factory.create(session)
+
+        for record in event.Records:
+            event_type = record.eventName
+            key = record.s3.object.key
+            timestamp = record.eventTime
+
+            if event_type.startswith("s3:ObjectCreated:"):
+                self._handle_create(repo, key, timestamp)
+
+            elif event_type.startswith("s3:ObjectRemoved:"):
+                self._handle_delete(repo, key)
+
+        session.close()
+
+    def _handle_create(
+        self, repo: AbstractItemRepository, key: str, timestamp: datetime
+    ) -> None:
+        object_type = self.infer_type(key)
+        if not repo.get_item(key):
+            repo.add_item(key, object_type, timestamp)
+
+    def _handle_delete(self, repo: AbstractItemRepository, key: str) -> None:
+        if repo.get_item(key):
+            repo.delete_item(key)
+
+    @staticmethod
+    def infer_type(key: str) -> str:
+        key = key.lower()
+        if key.endswith((".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic")):
+            return "picture"
+        elif key.endswith((".mp4", ".webm", ".mov", ".mkv")):
+            return "video"
+        return "unknown"

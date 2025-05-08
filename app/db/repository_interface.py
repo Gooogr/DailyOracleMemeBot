@@ -11,10 +11,14 @@ class AbstractItemRepository(ABC):
     def get_item(self, item_id: str):
         pass
 
+    @abstractmethod
+    def delete_item(self, item_id: str):
+        pass
+
 
 class AbstractInteractionRepository(ABC):
     @abstractmethod
-    def save_interaction(
+    def add_interaction(
         self, user_id: str, item_id: str, interaction_datetime: datetime
     ):
         pass
