@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import MagicMock
 from io import BytesIO
-from minio.error import S3Error, MinioException
+from unittest.mock import MagicMock
+
+import pytest
+from minio.error import MinioException, S3Error
 
 from app.storage.minio_storage import MinIOStorage
 
@@ -68,7 +69,9 @@ def test_list_objects_success(storage, mock_minio_client):
     result = storage.list_objects()
 
     assert result == ["file1.jpg", "file2.jpg"]
-    mock_minio_client.list_objects.assert_called_once_with("test-bucket", recursive=True)
+    mock_minio_client.list_objects.assert_called_once_with(
+        "test-bucket", recursive=True
+    )
 
 
 def test_list_objects_failure(storage, mock_minio_client):
