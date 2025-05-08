@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS items (
 );
 
 CREATE TABLE IF NOT EXISTS interactions (
+    id SERIAL PRIMARY KEY,
     user_id VARCHAR NOT NULL,
     item_id VARCHAR NOT NULL,
     interaction_dt TIMESTAMPTZ NOT NULL,

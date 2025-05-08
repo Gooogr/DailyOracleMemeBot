@@ -11,7 +11,7 @@ class Base(DeclarativeBase):
 
 class Item(Base):
     __tablename__ = "items"
-    id: Mapped[str] = mapped_column(String())
+    id: Mapped[str] = mapped_column(String(), primary_key=True)
     type: Mapped[str] = mapped_column(String(10))
     upload_dt: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -23,6 +23,7 @@ class Item(Base):
 
 class Interaction(Base):
     __tablename__ = "interactions"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(String())
     item_id: Mapped[str] = mapped_column(ForeignKey("items.id"))
     interaction_dt: Mapped[datetime] = mapped_column(
