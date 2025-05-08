@@ -1,5 +1,6 @@
 import asyncio
 import os
+from datetime import datetime
 
 from dotenv import load_dotenv
 from pyrogram import Client
@@ -10,6 +11,10 @@ api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 channel_id = os.getenv("CHANNEL_ID")
 invite_link = os.getenv("INVITE_LINK")
+
+# Указываем даты в формате YYYY-MM-DD
+START_DATE = datetime.strptime("2025-05-03", "%Y-%m-%d")
+END_DATE = datetime.strptime("2025-05-07", "%Y-%m-%d")
 
 session_name = "my_session"
 save_path = os.path.expanduser("~/Downloads/meme_media2")
@@ -29,11 +34,16 @@ async def main():
 
         count = 0
         async for msg in app.get_chat_history(channel_id):
+            if msg.date < START_DATE:
+                break  # История идёт в обратном порядке, можно остановиться
+            if msg.date > END_DATE:
+                continue
+
             if msg.photo or msg.video:
                 count += 1
                 date_str = msg.date.strftime("%Y-%m-%d_%H-%M-%S")
                 ext = ".jpg" if msg.photo else ".mp4"
-                filename = f"{date_str}_{count}{ext}"
+                filename = f"{date_str}{ext}"
                 filepath = os.path.join(save_path, filename)
 
                 result = await app.download_media(msg, file_name=filepath)
