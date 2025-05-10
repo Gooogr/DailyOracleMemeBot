@@ -3,8 +3,8 @@ import asyncio
 import os
 from datetime import datetime, timedelta
 
-from pyrogram import Client
 from config import Config, load_config
+from pyrogram import Client
 
 
 async def main(
@@ -12,7 +12,7 @@ async def main(
     start_date: datetime,
     end_date: datetime,
     save_dir: str,
-    session_name="my_session"
+    session_name="my_session",
 ) -> None:
     os.makedirs(save_dir, exist_ok=True)
 
@@ -36,9 +36,7 @@ async def main(
             if msg.photo or msg.video:
                 count += 1
                 date_str = msg.date.strftime("%Y-%m-%d_%H-%M-%S")
-                ext = (
-                    ".jpg" if msg.photo else ".mp4"
-                )
+                ext = ".jpg" if msg.photo else ".mp4"
                 filename = f"{date_str}{ext}"
                 filepath = os.path.join(save_dir, filename)
 
@@ -64,10 +62,14 @@ if __name__ == "__main__":
         "-e", "--end-date", type=str, help="End date in format YYYY-MM-DD"
     )
     parser.add_argument(
-        "-d", "--save-dir", type=str, default="./data", help="Saving dir for parsed objects"
+        "-d",
+        "--save-dir",
+        type=str,
+        default="./data",
+        help="Saving dir for parsed objects",
     )
     args = parser.parse_args()
-    
+
     asyncio.run(
         main(
             cfg=cfg,
