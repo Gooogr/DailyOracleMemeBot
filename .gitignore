@@ -181,3 +181,4 @@ docker/nginx/prod/ssl/*
 
 #scripts
 *.session
+scripts/tg_parser/data
