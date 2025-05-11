@@ -17,7 +17,6 @@ class PostgresItemRepository(AbstractItemRepository):
         item = Item(id=item_id, type=item_type, upload_dt=upload_datetime)
         self.session.add(item)
         self.session.commit()
-        return item  # TODO: remove return???
 
     def read(self, item_id: str):
         return self.session.query(Item).filter(Item.id == item_id).first()
@@ -26,7 +25,6 @@ class PostgresItemRepository(AbstractItemRepository):
         item = Item(id=item_id)
         self.session.delete(item)
         self.session.commit()
-        return
 
 
 class PostgresInteractionRepository(AbstractInteractionRepository):
@@ -41,4 +39,3 @@ class PostgresInteractionRepository(AbstractInteractionRepository):
         )
         self.session.add(interaction)
         self.session.commit()
-        return interaction
