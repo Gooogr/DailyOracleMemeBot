@@ -178,3 +178,7 @@ cython_debug/
 
 #nginx
 docker/nginx/prod/ssl/*
+
+#scripts
+*.session
+scripts/tg_parser/data
