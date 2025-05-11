@@ -12,8 +12,8 @@ class TelegramMediaDownloader:
         cfg: Config,
         start_date: datetime,
         end_date: datetime,
-        save_dir: str = "./data",
-        session_name: str = "my_session",
+        save_dir: str,
+        session_name: str,
     ):
         self.cfg = cfg
         self.start_date = start_date
@@ -36,7 +36,7 @@ class TelegramMediaDownloader:
         await self._peer_channel(client)
         await self._download_channel_media(client)
 
-        print("✅ All files were saved successfully.")
+        print("Done!")
 
     async def _peer_channel(self, client: Client) -> None:
         try:
