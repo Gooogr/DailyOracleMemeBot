@@ -4,21 +4,21 @@ from datetime import datetime
 
 class AbstractItemRepository(ABC):
     @abstractmethod
-    def add_item(self, item_id: str, item_type: str, upload_datetime: datetime):
+    def create(self, item_id: str, item_type: str, upload_datetime: datetime):
         pass
 
     @abstractmethod
-    def get_item(self, item_id: str):
+    def read(self, item_id: str):
         pass
 
     @abstractmethod
-    def delete_item(self, item_id: str):
+    def delete(self, item_id: str):
         pass
 
 
 class AbstractInteractionRepository(ABC):
     @abstractmethod
-    def add_interaction(
+    def create(
         self, user_id: str, item_id: str, interaction_datetime: datetime
     ):
         pass

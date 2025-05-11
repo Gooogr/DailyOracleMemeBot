@@ -36,12 +36,12 @@ class MinioEventHandler:
         self, repo: AbstractItemRepository, key: str, timestamp: datetime
     ) -> None:
         object_type = self.infer_type(key)
-        if not repo.get_item(key):
-            repo.add_item(key, object_type, timestamp)
+        if not repo.read(key):
+            repo.create(key, object_type, timestamp)
 
     def _handle_delete(self, repo: AbstractItemRepository, key: str) -> None:
-        if repo.get_item(key):
-            repo.delete_item(key)
+        if repo.read(key):
+            repo.delete(key)
 
     @staticmethod
     def infer_type(key: str) -> str:

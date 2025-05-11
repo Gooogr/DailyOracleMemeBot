@@ -13,16 +13,16 @@ class PostgresItemRepository(AbstractItemRepository):
     def __init__(self, session: Session):
         self.session = session
 
-    def add_item(self, item_id: str, item_type: str, upload_datetime: datetime):
+    def create(self, item_id: str, item_type: str, upload_datetime: datetime):
         item = Item(id=item_id, type=item_type, upload_dt=upload_datetime)
         self.session.add(item)
         self.session.commit()
         return item  # TODO: remove return???
 
-    def get_item(self, item_id: str):
+    def read(self, item_id: str):
         return self.session.query(Item).filter(Item.id == item_id).first()
 
-    def delete_item(self, item_id: str):
+    def delete(self, item_id: str):
         item = Item(id=item_id)
         self.session.delete(item)
         self.session.commit()
@@ -33,7 +33,7 @@ class PostgresInteractionRepository(AbstractInteractionRepository):
     def __init__(self, session: Session):
         self.session = session
 
-    def add_interaction(
+    def create(
         self, user_id: str, item_id: str, interaction_datetime: datetime
     ):
         interaction = Interaction(
