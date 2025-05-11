@@ -30,15 +30,15 @@ class TelegramMediaDownloader:
             client.run(self._process_channel(client))
 
     async def _process_channel(self, client):
-        print(f"📅 Selected date range [{self.start_date} ... {self.end_date}]")
+        print(f"📅 Selected time range [{self.start_date} ... {self.end_date}]")
         os.makedirs(self.save_dir, exist_ok=True)
 
-        await self._resolve_channel(client)
+        await self._peer_channel(client)
         await self._download_channel_media(client)
 
         print("✅ All files were saved successfully.")
 
-    async def _resolve_channel(self, client: Client) -> None:
+    async def _peer_channel(self, client: Client) -> None:
         try:
             chat = await client.get_chat(self.cfg.invite_link)
             print(f"Resolved channel: {chat.title} (id: {chat.id})")
