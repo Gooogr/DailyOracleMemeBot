@@ -27,4 +27,4 @@ Browser → localhost:8443 → SSH tunnel → VPS localhost:443 → Nginx HTTPS 
 ### `tg_parser` <br>
 Download Telegram channel media by date range.
 
-`python3 scripts/tg_parser/parser.py -s 2025-05-10 -e 2025-05-11`
+`python3 scripts/tg_parser/main.py -s 2025-05-10 -e 2025-05-11`
