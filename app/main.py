@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from minio import Minio
 
 from app.bot.bot import MemeOracleBot
+from app.db.postgres.factory import PostgresItemRepositoryFactory
 from app.db.postgres.provider import PostgresProvider
 from app.service.service import MemeOracleService
 from app.storage.minio_storage import MinIOStorage
@@ -22,12 +23,14 @@ def main():
         minio_client,
         os.getenv("MINIO_BUCKET_NAME"),
     )
-    db = PostgresProvider(
+    provider = PostgresProvider(
         user=os.getenv("POSTGRES_USER"),
         password=os.getenv("POSTGRES_PASSWORD"),
         db=os.getenv("POSTGRES_DB"),
     )
-    service = MemeOracleService(storage, db)
+    service = MemeOracleService(
+        storage, provider, PostgresItemRepositoryFactory
+    )  # TODO: looks like a refactoring place
     bot = MemeOracleBot(service, os.getenv("BOT_TOKEN"))
     bot.run()
 

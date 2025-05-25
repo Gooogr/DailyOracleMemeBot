@@ -46,10 +46,10 @@ Download Telegram channel media by date range.
 
 
 ## TODO
-- Force sync minio storage with the Items tables after start (?)
 - Add logging of user intercations with tg bot with the Intercations table
 
 ## Tech debt
 
 - Add alembic container for auto migrations
-
+- Add emergency localhost script that make force sync between minio storage and postgres Items table
+- Add video support, right now bot sends only photos

@@ -22,3 +22,7 @@ class AbstractInteractionRepository(ABC):
     @abstractmethod
     def create(self, user_id: str, item_id: str, interaction_datetime: datetime):
         pass
+
+    @abstractmethod
+    def read(self, user_id: str):
+        pass

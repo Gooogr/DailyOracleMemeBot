@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy.orm import Session
+from sqlalchemy import and_
+from sqlalchemy.orm import Session, aliased
 
 from app.db.models import Interaction, Item
 from app.db.repository_interface import (
@@ -30,6 +31,24 @@ class PostgresItemRepository(AbstractItemRepository):
         self.session.delete(item)
         self.session.commit()
 
+    def list_unseen(self, user_id: str) -> list[Item]:
+        InteractionAlias = aliased(Interaction)
+
+        query = (
+            self.session.query(Item)
+            .outerjoin(
+                InteractionAlias,
+                and_(
+                    Item.id == InteractionAlias.item_id,
+                    InteractionAlias.user_id == user_id,
+                ),
+            )
+            .filter(InteractionAlias.item_id == None)
+            .order_by(Item.upload_dt.desc())
+        )
+
+        return query.all()
+
 
 class PostgresInteractionRepository(AbstractInteractionRepository):
     def __init__(self, session: Session):
@@ -41,3 +60,11 @@ class PostgresInteractionRepository(AbstractInteractionRepository):
         )
         self.session.add(interaction)
         self.session.commit()
+
+    def read(self, user_id: str):
+        return (
+            self.session.query(Interaction.item_id)
+            .filter(Interaction.user_id == user_id)
+            .distinct()
+            .all()
+        )
