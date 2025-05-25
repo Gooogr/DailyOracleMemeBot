@@ -37,7 +37,7 @@ Browser → localhost:8443 → SSH tunnel → VPS localhost:443 → Nginx HTTPS 
 
 Make sure that 443 is closed for connection on the VPS side.
 
-## Scripts
+## Additional scripts
 
 ### `tg_parser` <br>
 Download Telegram channel media by date range.
@@ -46,10 +46,10 @@ Download Telegram channel media by date range.
 
 
 ## TODO
-- Sync minio storage with the Items tables after start (?)
+- Force sync minio storage with the Items tables after start (?)
 - Add logging of user intercations with tg bot with the Intercations table
-- Use snake_128 for hashing user/item ids: https://stackoverflow.com/a/62699124
 
-Хранить и имя файла, и его хеш из minioS3
-Тогда не будет проблем с тем, что имя может быть как из хеша, так и просто забито рукаи
+## Tech debt
+
+- Add alembic container for auto migrations
 

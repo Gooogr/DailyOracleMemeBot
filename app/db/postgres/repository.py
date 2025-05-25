@@ -13,8 +13,12 @@ class PostgresItemRepository(AbstractItemRepository):
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, item_id: str, item_type: str, upload_datetime: datetime):
-        item = Item(id=item_id, type=item_type, upload_dt=upload_datetime)
+    def create(
+        self, item_id: str, s3_name: str, item_type: str, upload_datetime: datetime
+    ):
+        item = Item(
+            id=item_id, s3_name=s3_name, type=item_type, upload_dt=upload_datetime
+        )
         self.session.add(item)
         self.session.commit()
 
@@ -31,9 +35,7 @@ class PostgresInteractionRepository(AbstractInteractionRepository):
     def __init__(self, session: Session):
         self.session = session
 
-    def create(
-        self, user_id: str, item_id: str, interaction_datetime: datetime
-    ):
+    def create(self, user_id: str, item_id: str, interaction_datetime: datetime):
         interaction = Interaction(
             user_id=user_id, item_id=item_id, interaction_dt=interaction_datetime
         )

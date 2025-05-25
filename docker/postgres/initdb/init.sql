@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS items (
     id VARCHAR PRIMARY KEY,
-    type VARCHAR(10) NOT NULL,
+    s3_name VARCHAR NOT NULL,
+    type VARCHAR(10) NOT NULL, /*image or video*/
     upload_dt TIMESTAMPTZ NOT NULL
 );
 
