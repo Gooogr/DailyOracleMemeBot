@@ -53,7 +53,7 @@ class MinioEventHandler:
     @staticmethod
     def infer_type(key: str) -> str:
         key = key.lower()
-        if key.endswith((".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic")):
+        if key.endswith((".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".avif")):
             return "picture"
         elif key.endswith((".mp4", ".webm", ".mov", ".mkv")):
             return "video"

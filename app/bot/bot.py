@@ -19,18 +19,13 @@ class MemeOracleBot:
 
     def handle_ask_oracle(self, message):
         user_id = message.from_user.id
-        selected_db_item_id = self.service.get_db_item_id(user_id=user_id)
-
-        s3_object = self.service.get_next_unseen_object(selected_db_item_id)
-
+        s3_object = self.service.fetch_and_log_next_object(user_id)
         if not s3_object:
             self.bot.reply_to(message, "No prophecies found.")
             return
-
-        # TODO handle both video/img
+        # TODO: handle and log here telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful.
+        # Error code: 400. Description: Bad Request: IMAGE_PROCESS_FAILED
         self.bot.send_photo(message.chat.id, s3_object)
-
-        # TODO: update Ineractions table in DB
 
     def _register_handlers(self):
         self.bot.message_handler(commands=["ask_oracle"])(self.handle_ask_oracle)

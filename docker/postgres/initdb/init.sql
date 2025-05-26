@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS items (
 
 CREATE TABLE IF NOT EXISTS interactions (
     id SERIAL PRIMARY KEY,
-    user_id VARCHAR NOT NULL,
+    user_id INTEGER NOT NULL,
     item_id VARCHAR NOT NULL,
     interaction_dt TIMESTAMPTZ NOT NULL,
     FOREIGN KEY (item_id) REFERENCES items(id)
