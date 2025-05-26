@@ -36,9 +36,7 @@ class MinioEventHandler:
 
         session.close()
 
-    def _handle_create(
-        self, repo: AbstractItemRepository, key: str, timestamp: datetime
-    ) -> None:
+    def _handle_create(self, repo: AbstractItemRepository, key: str, timestamp: datetime) -> None:
         item_id = self.key_to_id(key)
         object_type = self.infer_type(key)
         object_name = os.path.basename(key)
@@ -55,7 +53,7 @@ class MinioEventHandler:
         key = key.lower()
         if key.endswith((".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".avif")):
             return "picture"
-        elif key.endswith((".mp4", ".webm", ".mov", ".mkv")):
+        if key.endswith((".mp4", ".webm", ".mov", ".mkv")):
             return "video"
         return "unknown"
 

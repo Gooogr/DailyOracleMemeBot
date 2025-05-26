@@ -44,9 +44,7 @@ class TelegramMediaDownloader:
         async for msg in self.client.get_chat_history(self.cfg.channel_id):
             if msg.date < self.start_date:
                 break
-            if self.start_date <= msg.date <= self.end_date and (
-                msg.photo or msg.video
-            ):
+            if self.start_date <= msg.date <= self.end_date and (msg.photo or msg.video):
                 filename = self._generate_filename(msg)
                 filepath = os.path.join(self.save_dir, filename)
                 try:

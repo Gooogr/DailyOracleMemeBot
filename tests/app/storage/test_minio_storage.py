@@ -69,9 +69,7 @@ def test_list_objects_success(storage, mock_minio_client):
     result = storage.list_objects()
 
     assert result == ["file1.jpg", "file2.jpg"]
-    mock_minio_client.list_objects.assert_called_once_with(
-        "test-bucket", recursive=True
-    )
+    mock_minio_client.list_objects.assert_called_once_with("test-bucket", recursive=True)
 
 
 def test_list_objects_failure(storage, mock_minio_client):

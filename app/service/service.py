@@ -21,7 +21,7 @@ class MemeOracleService:
         self.item_repo_factory = item_repo_factory
         self.interaction_repo_factory = interaction_repo_factory
 
-    def fetch_and_log_next_object(self, user_id: str):
+    def fetch_and_log_next_object(self, user_id: int):
         session = self.provider.get_session()
 
         item_repo = self.item_repo_factory.create(session)

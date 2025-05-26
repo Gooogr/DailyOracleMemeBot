@@ -36,22 +36,15 @@ class MinIOStorage(AbstractStorage):
             )
             raise
         except Exception as e:
-            logger.exception(
-                "Unexpected error retrieving object '%s': %s", object_name, e
-            )
+            logger.exception("Unexpected error retrieving object '%s': %s", object_name, e)
             raise
 
     def list_objects(self) -> List[str]:
         try:
-            objects = [
-                obj.object_name
-                for obj in self.client.list_objects(self.bucket_name, recursive=True)
-            ]
+            objects = [obj.object_name for obj in self.client.list_objects(self.bucket_name, recursive=True)]
             return objects
         except (S3Error, MinioException) as e:
-            logger.error(
-                "Error listing objects in bucket '%s': %s", self.bucket_name, e
-            )
+            logger.error("Error listing objects in bucket '%s': %s", self.bucket_name, e)
             raise
         except Exception as e:
             logger.exception(

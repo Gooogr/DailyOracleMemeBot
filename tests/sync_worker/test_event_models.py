@@ -55,9 +55,7 @@ def test_event_convertion():
 
     payload = MinioWebhookPayload(**body)
     assert payload.Records[0].eventName == "s3:ObjectCreated:Put"
-    assert payload.Records[0].eventTime == datetime(
-        2025, 5, 7, 18, 27, 43, 866000, tzinfo=ZoneInfo("UTC")
-    )
+    assert payload.Records[0].eventTime == datetime(2025, 5, 7, 18, 27, 43, 866000, tzinfo=ZoneInfo("UTC"))
     assert payload.Records[0].s3.object.key == "test_img.jpg"
     assert payload.Records[0].s3.object.contentType == "image/jpeg"
     assert payload.Records[0].s3.object.eTag == "43d35848b68212475fc4dbd100b3bc6c"

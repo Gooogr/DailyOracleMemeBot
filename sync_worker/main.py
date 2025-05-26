@@ -14,9 +14,9 @@ app = FastAPI()
 
 handler = MinioEventHandler(
     provider=PostgresProvider(
-        user=os.getenv("POSTGRES_USER"),
-        password=os.getenv("POSTGRES_PASSWORD"),
-        db=os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER", ""),
+        password=os.getenv("POSTGRES_PASSWORD", ""),
+        db=os.getenv("POSTGRES_DB", ""),
     ),
     item_repo_factory=PostgresItemRepositoryFactory(),
 )

@@ -23,7 +23,7 @@ class MemeOracleBot:
         if not s3_object:
             self.bot.reply_to(message, "No prophecies found.")
             return
-        # TODO: handle and log here telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful.
+        # TODO: handle and log here telebot.apihelper.ApiTelegramException
         # Error code: 400. Description: Bad Request: IMAGE_PROCESS_FAILED
         self.bot.send_photo(message.chat.id, s3_object)
 
