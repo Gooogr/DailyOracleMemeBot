@@ -42,3 +42,20 @@ addopts = "-ra"
 testpaths = [
     "tests",
 ]
+
+[tool.isort]
+profile = "black"
+skip = [".venv"]
+
+[tool.black]
+exclude = '''
+/(
+  \.venv
+)/
+'''
+
+[tool.flake8]
+exclude = '.venv'
+
+[tool.mypy]
+exclude = '\.venv'
