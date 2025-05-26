@@ -11,25 +11,15 @@ def main():
         prog="Tg parser",
         description="Parse images and videos from private tg channel",
     )
-    parser.add_argument(
-        "-s", "--start-date", required=True, help="Start date YYYY-MM-DD"
-    )
+    parser.add_argument("-s", "--start-date", required=True, help="Start date YYYY-MM-DD")
     parser.add_argument("-e", "--end-date", required=True, help="End date YYYY-MM-DD")
-    parser.add_argument(
-        "-d", "--save-dir", default="./data", help="Directory to save media"
-    )
-    parser.add_argument(
-        "-n", "--session-name", default="my_session", help="Pyrogram session name"
-    )
+    parser.add_argument("-d", "--save-dir", default="./data", help="Directory to save media")
+    parser.add_argument("-n", "--session-name", default="my_session", help="Pyrogram session name")
     args = parser.parse_args()
 
     cfg = load_config()
     start_date = datetime.strptime(args.start_date, "%Y-%m-%d")
-    end_date = (
-        datetime.strptime(args.end_date, "%Y-%m-%d")
-        + timedelta(days=1)
-        - timedelta(microseconds=1)
-    )
+    end_date = datetime.strptime(args.end_date, "%Y-%m-%d") + timedelta(days=1) - timedelta(microseconds=1)
 
     with Client(
         name=args.session_name,

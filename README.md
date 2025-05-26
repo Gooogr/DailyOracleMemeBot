@@ -8,23 +8,48 @@ chmod +x ./scripts/nginx/generate-cert.sh
 ./scripts/nginx/generate-cert.sh
 ```
 
+Enable minio webhook setup script
+```bash
+chmod +x ./scripts/minio/minio_setup.sh
+```
+
 Run docker
 ```bash
 docker compose -f docker-compose.prod.yaml up --build
 ```
 
-How to open minio admin panel
+How to open admin panels
 ```bash
 ssh -L 8443:localhost:443 your-user@your-vps-ip
-https://localhost:8443/
 ```
+Minio UI: `https://localhost:8443/`
+Adminer: `https://localhost:8443/adminer`
+
+Or if you run prod config locally:
+```bash
+https://localhost:443/
+```
+Minio UI: `https://localhost:443/`
+Adminer: `https://localhost:443/adminer`
 
 So basically we:
 Browser → localhost:8443 → SSH tunnel → VPS localhost:443 → Nginx HTTPS → MinIO Console
 
-## Scripts
+Make sure that 443 is closed for connection on the VPS side.
+
+## Additional scripts
 
 ### `tg_parser` <br>
 Download Telegram channel media by date range.
 
 `python3 scripts/tg_parser/main.py -s 2025-05-10 -e 2025-05-11`
+
+
+## TODO
+- Add limit for user 1 object per day
+
+## Tech debt
+- Add alembic container for auto migrations
+- Add emergency localhost script that make force sync between minio storage and postgres Items table
+- Add video support, right now bot sends only photos
+- Store hash of user_id, not int
