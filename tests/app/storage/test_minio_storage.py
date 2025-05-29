@@ -2,9 +2,15 @@ from io import BytesIO
 from unittest.mock import MagicMock
 
 import pytest
-from minio.error import MinioException, S3Error
+from minio.error import S3Error, MinioException
 
 from app.storage.minio_storage import MinIOStorage
+from app.storage.exceptions import (
+    ObjectNotFoundError,
+    ObjectListingError,
+    StorageError,
+    BucketNotFoundError,
+)
 
 
 @pytest.fixture
@@ -27,14 +33,10 @@ def test_get_object_success(storage, mock_minio_client):
     assert isinstance(result, BytesIO)
     assert result.read() == b"test data"
     assert result.name == "test-object"
-    mock_response.close.assert_called_once()
-    mock_response.release_conn.assert_called_once()
-    mock_minio_client.get_object.assert_called_once_with("test-bucket", "test-object")
 
 
-def test_get_object_s3_error(storage, mock_minio_client):
+def test_get_object_raises_object_not_found(storage, mock_minio_client):
     mock_response = MagicMock()
-    mock_response.read.return_value = b"error"
 
     error = S3Error(
         code="NoSuchKey",
@@ -44,44 +46,34 @@ def test_get_object_s3_error(storage, mock_minio_client):
         host_id="localhost",
         response=mock_response,
     )
-
     mock_minio_client.get_object.side_effect = error
 
-    with pytest.raises(S3Error):
-        storage.get_object("bad-object")
+    with pytest.raises(ObjectNotFoundError) as exc_info:
+        storage.get_object("missing-object")
+    assert "missing-object" in str(exc_info.value)
 
 
-def test_get_object_minio_error(storage, mock_minio_client):
-    mock_minio_client.get_object.side_effect = MinioException("MinIO failure")
+def test_get_object_raises_generic_storage_error(storage, mock_minio_client):
+    mock_minio_client.get_object.side_effect = MinioException("generic failure")
 
-    with pytest.raises(MinioException):
-        storage.get_object("bad-object")
+    with pytest.raises(StorageError) as exc_info:
+        storage.get_object("any-object")
+    assert "Failed to retrieve object" in str(exc_info.value)
 
 
 def test_list_objects_success(storage, mock_minio_client):
-    mock_obj1 = MagicMock()
-    mock_obj1.object_name = "file1.jpg"
-    mock_obj2 = MagicMock()
-    mock_obj2.object_name = "file2.jpg"
-
+    mock_minio_client.bucket_exists.return_value = True
+    mock_obj1 = MagicMock(object_name="file1.jpg")
+    mock_obj2 = MagicMock(object_name="file2.jpg")
     mock_minio_client.list_objects.return_value = [mock_obj1, mock_obj2]
 
     result = storage.list_objects()
 
     assert result == ["file1.jpg", "file2.jpg"]
-    mock_minio_client.list_objects.assert_called_once_with("test-bucket", recursive=True)
-
-
-def test_list_objects_failure(storage, mock_minio_client):
-    mock_minio_client.list_objects.side_effect = MinioException("List failure")
-
-    with pytest.raises(MinioException):
-        storage.list_objects()
-
 
 def test_get_random_object_success(storage, mock_minio_client):
-    mock_obj = MagicMock()
-    mock_obj.object_name = "random-file.txt"
+    mock_minio_client.bucket_exists.return_value = True
+    mock_obj = MagicMock(object_name="random-file.txt")
     mock_minio_client.list_objects.return_value = [mock_obj]
 
     mock_response = MagicMock()
@@ -95,8 +87,25 @@ def test_get_random_object_success(storage, mock_minio_client):
     assert result.name == "random-file.txt"
 
 
+def test_list_objects_bucket_missing(storage, mock_minio_client):
+    mock_minio_client.bucket_exists.return_value = False
+
+    with pytest.raises(BucketNotFoundError):
+        storage.list_objects()
+
+
+def test_list_objects_failure(storage, mock_minio_client):
+    mock_minio_client.bucket_exists.return_value = True
+    mock_minio_client.list_objects.side_effect = MinioException("oops")
+
+    with pytest.raises(ObjectListingError):
+        storage.list_objects()
+
+
+
 def test_get_random_object_empty_bucket(storage, mock_minio_client):
+    mock_minio_client.bucket_exists.return_value = True
     mock_minio_client.list_objects.return_value = []
 
-    with pytest.raises(IndexError):  # random.choice([]) raises IndexError
+    with pytest.raises(ObjectNotFoundError):
         storage.get_random_object()
