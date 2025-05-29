@@ -1,12 +1,10 @@
-from pathlib import Path
+import os
+from functools import cache
 
 import telebot
-import yaml
 from loguru import logger
 
 from app.service.service import MemeOracleService
-
-PATH_TO_TESTRES_ID_LIST = "../../authorized-testers.yaml"
 
 
 class MemeOracleBot:
@@ -27,18 +25,35 @@ class MemeOracleBot:
         if not s3_object:
             self.bot.reply_to(message, "No prophecies found.")
             return
+        # TODO: add video support as well
         self.bot.send_photo(message.chat.id, s3_object)
 
     def handle_ask_oracle(self, message):
         user_id = message.from_user.id
-        s3_object = self.service.fetch_and_log_next_object(user_id)
-        if not s3_object:
+        item = self.service.get_next_unseen_item(user_id)
+        logger.info(item)
+
+        if not item:
             self.bot.reply_to(message, "No prophecies found.")
             return
+
+        s3_object = self.service.get_object(item.s3_name)  # raise error in storage level
+
         try:
-            self.bot.send_photo(message.chat.id, s3_object)
+            if item.type == "image":
+                self.bot.send_photo(message.chat.id, s3_object)
+                self.service.log_interaction(user_id, item.id)
+                logger.info(f"Send image to {user_id}, item {item}")
+            elif item.type == "video":
+                self.bot.send_video(message.chat.id, s3_object)
+                self.service.log_interaction(user_id, item.id)
+                logger.info(f"Send video to {user_id}, item {item}")
+            else:
+                logger.error(f"Got undefined item type {item.type}. Should be `image` or `video`")
+        # TODO: log log_intercation Excelption as well. How to make it independent from provider?
         except telebot.apihelper.ApiTelegramException as e:
-            logger.warning(f"Can't send {s3_object.name} with error {e}")
+            logger.error(f"Can't send {s3_object.name} with error {e}")
+            return
 
     def _register_handlers(self):
         self.bot.message_handler(commands=["ask_oracle"])(self.handle_ask_oracle)
@@ -48,9 +63,7 @@ class MemeOracleBot:
     def run(self):
         self.bot.infinity_polling()
 
-    @staticmethod
-    def get_authorized_testers():
-        config_path = Path(PATH_TO_TESTRES_ID_LIST)
-        with open(config_path, "r") as f:
-            data = yaml.safe_load(f)
-        return set(data.get("testers", []))
+    @cache
+    def get_authorized_testers(self):
+        testers = os.getenv("AUTHORIZED_TESTERS_TG_IDS", "")
+        return set(map(int, testers.split(","))) if testers else set()

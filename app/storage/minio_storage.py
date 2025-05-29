@@ -1,15 +1,12 @@
-import logging
 import random
 from io import BytesIO
 from typing import List
 
+from loguru import logger
 from minio import Minio
 from minio.error import MinioException, S3Error
 
 from app.storage.storage_interface import AbstractStorage
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 class MinIOStorage(AbstractStorage):
@@ -34,9 +31,9 @@ class MinIOStorage(AbstractStorage):
                 self.bucket_name,
                 e,
             )
-            raise
+            raise  # TODO: raise or return??? Think about stirage -> srevice -> bot layers
         except Exception as e:
-            logger.exception("Unexpected error retrieving object '%s': %s", object_name, e)
+            logger.error("Unexpected error retrieving object '%s': %s", object_name, e)
             raise
 
     def list_objects(self) -> List[str]:
@@ -47,7 +44,7 @@ class MinIOStorage(AbstractStorage):
             logger.error("Error listing objects in bucket '%s': %s", self.bucket_name, e)
             raise
         except Exception as e:
-            logger.exception(
+            logger.error(
                 "Unexpected error listing objects in bucket '%s': %s",
                 self.bucket_name,
                 e,

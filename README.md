@@ -13,9 +13,7 @@ Enable MinIO webhook setup:
 chmod +x ./scripts/minio/minio_setup.sh
 ```
 
-Create configuration files:
-- `.env` based on `.env.example`
-- `authorized-testers.yaml` based on `authorized-testers.yaml.example` (grants access to developer-only handlers and bypasses limits)
+Create `.env` based on `.env.example`
 
 Build and start the project:
 ```bash
