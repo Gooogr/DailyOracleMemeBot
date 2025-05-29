@@ -26,7 +26,7 @@ class MemeOracleService:
     def get_random_item(self) -> Optional[Item]:
         return self.item_service.get_random_item()
 
-    def get_object(self, object_name: str) -> BytesIO:
+    def get_object(self, object_name: str) -> Optional[BytesIO]:
         return self.storage.get_object(object_name)
 
     def log_interaction(self, user_id: int, item_id: str) -> None:

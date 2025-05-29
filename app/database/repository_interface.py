@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Optional
 
 from app.database.models import Interaction, Item
 
@@ -10,7 +11,7 @@ class AbstractItemRepository(ABC):
         pass
 
     @abstractmethod
-    def read(self, item_id: str) -> Item:
+    def read(self, item_id: str) -> Optional[Item]:
         pass
 
     @abstractmethod
@@ -18,7 +19,11 @@ class AbstractItemRepository(ABC):
         pass
 
     @abstractmethod
-    def list_unseen(self, user_id: int) -> list[Item]:
+    def list_unseen(self, user_id: int) -> Optional[list[Item]]:
+        pass
+
+    @abstractmethod
+    def random_item(self) -> Optional[Item]:
         pass
 
 
@@ -28,5 +33,5 @@ class AbstractInteractionRepository(ABC):
         pass
 
     @abstractmethod
-    def read(self, user_id: int) -> Interaction:
+    def read(self, user_id: int) -> Optional[list[Interaction]]:
         pass

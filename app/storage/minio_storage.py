@@ -48,7 +48,7 @@ class MinIOStorage(AbstractStorage):
         except Exception as e:
             raise StorageError(f"Unexpected error for bucket '{self.bucket_name}'") from e
 
-    def get_random_object(self) -> BytesIO:
+    def get_random_object(self) -> Optional[BytesIO]:
         objects = self.list_objects()
         if not objects:
             raise ObjectNotFoundError("<random>", self.bucket_name)

@@ -34,6 +34,9 @@ class MemeOracleBot:
             self.bot.reply_to(message, "Unknown command.")
             return
         item = self.service.get_random_item()
+        if not item:
+            self.bot.reply_to(message, "Got none instead of item object")
+            return
         status = self._try_send_item(chat_id, user_id, item)
         if status != SendStatus.SUCCESS:
             self.bot.reply_to(message, "Failed to send object")
