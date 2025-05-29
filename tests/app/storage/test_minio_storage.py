@@ -2,15 +2,15 @@ from io import BytesIO
 from unittest.mock import MagicMock
 
 import pytest
-from minio.error import S3Error, MinioException
+from minio.error import MinioException, S3Error
 
-from app.storage.minio_storage import MinIOStorage
 from app.storage.exceptions import (
-    ObjectNotFoundError,
-    ObjectListingError,
-    StorageError,
     BucketNotFoundError,
+    ObjectListingError,
+    ObjectNotFoundError,
+    StorageError,
 )
+from app.storage.minio_storage import MinIOStorage
 
 
 @pytest.fixture
@@ -58,7 +58,8 @@ def test_get_object_raises_generic_storage_error(storage, mock_minio_client):
 
     with pytest.raises(StorageError) as exc_info:
         storage.get_object("any-object")
-    assert "Failed to retrieve object" in str(exc_info.value)
+
+    assert "Unexpected error for object 'any-object' in bucket 'test-bucket'" in str(exc_info.value)
 
 
 def test_list_objects_success(storage, mock_minio_client):
@@ -70,6 +71,7 @@ def test_list_objects_success(storage, mock_minio_client):
     result = storage.list_objects()
 
     assert result == ["file1.jpg", "file2.jpg"]
+
 
 def test_get_random_object_success(storage, mock_minio_client):
     mock_minio_client.bucket_exists.return_value = True
@@ -87,13 +89,6 @@ def test_get_random_object_success(storage, mock_minio_client):
     assert result.name == "random-file.txt"
 
 
-def test_list_objects_bucket_missing(storage, mock_minio_client):
-    mock_minio_client.bucket_exists.return_value = False
-
-    with pytest.raises(BucketNotFoundError):
-        storage.list_objects()
-
-
 def test_list_objects_failure(storage, mock_minio_client):
     mock_minio_client.bucket_exists.return_value = True
     mock_minio_client.list_objects.side_effect = MinioException("oops")
@@ -102,10 +97,16 @@ def test_list_objects_failure(storage, mock_minio_client):
         storage.list_objects()
 
 
-
 def test_get_random_object_empty_bucket(storage, mock_minio_client):
     mock_minio_client.bucket_exists.return_value = True
     mock_minio_client.list_objects.return_value = []
 
     with pytest.raises(ObjectNotFoundError):
         storage.get_random_object()
+
+
+def test_storage_init_raises_bucket_not_found(mock_minio_client):
+    mock_minio_client.bucket_exists.return_value = False
+
+    with pytest.raises(BucketNotFoundError):
+        MinIOStorage(client=mock_minio_client, bucket_name="missing-bucket")
