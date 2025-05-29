@@ -1,14 +1,14 @@
 from sqlalchemy.orm import Session
 
-from app.db.factory_interface import (
+from app.database.factory_interface import (
     AbstractInteractionRepositoryFactory,
     AbstractItemRepositoryFactory,
 )
-from app.db.postgres.repository import (
+from app.database.postgres.repository import (
     PostgresInteractionRepository,
     PostgresItemRepository,
 )
-from app.db.repository_interface import (
+from app.database.repository_interface import (
     AbstractInteractionRepository,
     AbstractItemRepository,
 )

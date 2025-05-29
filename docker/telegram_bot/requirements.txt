@@ -3,3 +3,4 @@ python-dotenv==1.1.0
 minio==7.2.15
 sqlalchemy==2.0.40
 psycopg2-binary==2.9.10
+loguru == 0.7.3
