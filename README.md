@@ -17,7 +17,7 @@ Create `.env` based on `.env.example`
 
 Build and start the project:
 ```bash
-docker compose -f docker-compose.yaml up --build
+docker compose up --build
 ```
 
 ## Monitoring
@@ -51,10 +51,7 @@ python3 scripts/tg_parser/main.py -s 2025-05-10 -e 2025-05-11
 ```
 
 ## TODO
-- Enforce one object per user per day
-
-## Technical Debt
 - Add Alembic container for migrations
 - Add fallback sync script between MinIO and Postgres `items` table
-- Add video support (currently supports only photos)
-- Store hashed `user_id` instead of raw integer
+- Store hashed `user_id` instead of raw integer (?)
+- Add logs monitoring
