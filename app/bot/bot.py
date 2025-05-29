@@ -1,12 +1,13 @@
 import os
 from enum import Enum
 from functools import cache
-from telebot.types import Message
+
 import telebot
 from loguru import logger
+from telebot.types import Message
 
 from app.db.models import Item
-from app.service.service import MemeOracleService
+from app.service.facade import MemeOracleService
 
 
 class SendStatus(Enum):

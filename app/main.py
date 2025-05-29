@@ -9,7 +9,9 @@ from app.db.postgres.factory import (
     PostgresItemRepositoryFactory,
 )
 from app.db.postgres.provider import PostgresProvider
-from app.service.service import MemeOracleService
+from app.service.facade import MemeOracleService
+from app.service.interaction_service import InteractionService
+from app.service.item_service import ItemService
 from app.storage.minio_storage import MinIOStorage
 
 load_dotenv(dotenv_path="../.env")
@@ -31,9 +33,13 @@ def main():
         password=os.getenv("POSTGRES_PASSWORD"),
         db=os.getenv("POSTGRES_DB"),
     )
-    item_factory = PostgresItemRepositoryFactory()
-    interaction_factory = PostgresInteractionRepositoryFactory()
-    service = MemeOracleService(storage, provider, item_factory, interaction_factory)
+    item_repo_factory = PostgresItemRepositoryFactory()
+    interaction_repo_factory = PostgresInteractionRepositoryFactory()
+
+    item_service = ItemService(provider, item_repo_factory)
+    interaction_service = InteractionService(provider, interaction_repo_factory)
+    service = MemeOracleService(item_service, interaction_service, storage)
+
     bot = MemeOracleBot(service, os.getenv("BOT_TOKEN"))
     bot.run()
 
