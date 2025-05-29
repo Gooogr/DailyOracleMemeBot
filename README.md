@@ -1,55 +1,62 @@
 # DailyOracleMemeBot
 
-## Deploy
+## Deployment
 
-Create self-signed certificate
+Generate self-signed certificate:
 ```bash
 chmod +x ./scripts/nginx/generate-cert.sh
 ./scripts/nginx/generate-cert.sh
 ```
 
-Enable minio webhook setup script
+Enable MinIO webhook setup:
 ```bash
 chmod +x ./scripts/minio/minio_setup.sh
 ```
 
-Run docker
+Create configuration files:
+- `.env` based on `.env.example`
+- `authorized-testers.yaml` based on `authorized-testers.yaml.example` (grants access to developer-only handlers and bypasses limits)
+
+Build and start the project:
 ```bash
-docker compose -f docker-compose.prod.yaml up --build
+docker compose -f docker-compose.yaml up --build
 ```
 
-How to open admin panels
+## Monitoring
+
+### Production (VPS)
+
+Create an SSH tunnel:
 ```bash
 ssh -L 8443:localhost:443 your-user@your-vps-ip
 ```
-Minio UI: `https://localhost:8443/`
-Adminer: `https://localhost:8443/adminer`
 
-Or if you run prod config locally:
+Access via browser:
+- MinIO: `https://localhost:8443/`
+- Adminer: `https://localhost:8443/adminer`
+
+Ensure port `443` is blocked from external access on the VPS.
+
+### Local Development
+
+If running the production config locally:
+- MinIO: `https://localhost:443/`
+- Adminer: `https://localhost:443/adminer`
+
+## Scripts
+
+### Telegram Parser
+
+Download media from a Telegram channel within a date range:
 ```bash
-https://localhost:443/
+python3 scripts/tg_parser/main.py -s 2025-05-10 -e 2025-05-11
 ```
-Minio UI: `https://localhost:443/`
-Adminer: `https://localhost:443/adminer`
-
-So basically we:
-Browser → localhost:8443 → SSH tunnel → VPS localhost:443 → Nginx HTTPS → MinIO Console
-
-Make sure that 443 is closed for connection on the VPS side.
-
-## Additional scripts
-
-### `tg_parser` <br>
-Download Telegram channel media by date range.
-
-`python3 scripts/tg_parser/main.py -s 2025-05-10 -e 2025-05-11`
-
 
 ## TODO
-- Add limit for user 1 object per day
+- Enforce one object per user per day
 
-## Tech debt
-- Add alembic container for auto migrations
-- Add emergency localhost script that make force sync between minio storage and postgres Items table
-- Add video support, right now bot sends only photos
-- Store hash of user_id, not int
+## Technical Debt
+- Add Alembic container for migrations
+- Add fallback sync script between MinIO and Postgres `items` table
+- Add video support (currently supports only photos)
+- Store hashed `user_id` instead of raw integer
