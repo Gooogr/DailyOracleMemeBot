@@ -183,6 +183,3 @@ docker/nginx/*/logs
 #scripts
 *.session
 scripts/tg_parser/data
-
-# bot handler protection
-authorized-testers.yaml
