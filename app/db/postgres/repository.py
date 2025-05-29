@@ -61,4 +61,10 @@ class PostgresInteractionRepository(AbstractInteractionRepository):
         self.session.commit()
 
     def read(self, user_id: int) -> Optional[list[Interaction]]:
-        return self.session.query(Interaction.item_id).filter(Interaction.user_id == user_id).distinct().all()
+        query = (
+            self.session.query(Interaction)
+            .filter(Interaction.user_id == user_id)
+            .distinct()
+            .order_by(Interaction.interaction_dt.desc())
+        )
+        return query.all()

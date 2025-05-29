@@ -1,10 +1,9 @@
 import os
 from enum import Enum
 from functools import cache
-
+from telebot.types import Message
 import telebot
 from loguru import logger
-from telebot.types import Message
 
 from app.db.models import Item
 from app.service.service import MemeOracleService
@@ -24,10 +23,9 @@ class MemeOracleBot:
         self.service = service
         self._register_handlers()
 
-    def handle_help(self, message: Message):
+    def handle_help(self, message: Message) -> None:
         self.bot.reply_to(message, "Ask the Oracle by using /ask_oracle.")
 
-    # only for testers
     def handle_random(self, message: Message) -> None:
         user_id = message.from_user.id
         chat_id = message.chat.id
@@ -35,24 +33,23 @@ class MemeOracleBot:
             self.bot.reply_to(message, "Unknown command.")
             return
         item = self.service.get_random_item()
-        self.try_send_item(chat_id, user_id, item)
+        self._try_send_item(chat_id, user_id, item)
 
     def handle_ask_oracle(self, message: Message) -> None:
         user_id = message.from_user.id
         chat_id = message.chat.id
-        unseen_items = self.service.get_unseen_items(user_id)
 
-        if not unseen_items:
-            self.bot.reply_to(message, "No prophecies found.")
+        item = self.service.get_next_eligible_item(user_id)
+        if not item:
+            self.bot.reply_to(message, "Come back tomorrow for more wisdom.")
             return
 
-        for item in unseen_items:
-            if self.try_send_item(chat_id, user_id, item) == SendStatus.SUCCESS:
-                self.service.log_interaction(user_id, item.id)
-                return
-        self.bot.reply_to(message, "No prophecies found.")
+        if self._try_send_item(chat_id, user_id, item) == SendStatus.SUCCESS:
+            self.service.log_interaction(user_id, item.id)
+        else:
+            self.bot.reply_to(message, "No prophecies found.")
 
-    def try_send_item(self, chat_id: int, user_id: int, item: Item) -> SendStatus:
+    def _try_send_item(self, chat_id: int, user_id: int, item: Item) -> SendStatus:
         if not item:
             return SendStatus.UNKNOWN_ERROR
 
@@ -86,7 +83,7 @@ class MemeOracleBot:
         self.bot.message_handler(commands=["random"])(self.handle_random)
         self.bot.message_handler(commands=["help"])(self.handle_help)
 
-    def run(self):
+    def run(self) -> None:
         self.bot.infinity_polling()
 
     @cache
