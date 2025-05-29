@@ -1,8 +1,8 @@
 from typing import Optional
 
-from app.db.factory_interface import AbstractItemRepositoryFactory
-from app.db.models import Item
-from app.db.provider_interface import AbstractDatabaseProvider
+from app.database.factory_interface import AbstractItemRepositoryFactory
+from app.database.models import Item
+from app.database.provider_interface import AbstractDatabaseProvider
 
 
 class ItemService:

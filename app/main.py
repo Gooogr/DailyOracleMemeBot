@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 from minio import Minio
 
 from app.bot.bot import MemeOracleBot
-from app.db.postgres.factory import (
+from app.database.postgres.factory import (
     PostgresInteractionRepositoryFactory,
     PostgresItemRepositoryFactory,
 )
-from app.db.postgres.provider import PostgresProvider
+from app.database.postgres.provider import PostgresProvider
 from app.service.facade import MemeOracleService
 from app.service.interaction_service import InteractionService
 from app.service.item_service import ItemService

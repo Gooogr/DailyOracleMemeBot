@@ -1,7 +1,7 @@
 from io import BytesIO
 from typing import Optional
 
-from app.db.models import Item
+from app.database.models import Item
 from app.service.interaction_service import InteractionService
 from app.service.item_service import ItemService
 from app.storage.storage_interface import AbstractStorage

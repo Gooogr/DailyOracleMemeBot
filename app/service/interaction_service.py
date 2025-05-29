@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from app.db.factory_interface import AbstractInteractionRepositoryFactory
-from app.db.models import Interaction
-from app.db.provider_interface import AbstractDatabaseProvider
+from app.database.factory_interface import AbstractInteractionRepositoryFactory
+from app.database.models import Interaction
+from app.database.provider_interface import AbstractDatabaseProvider
 
 
 class InteractionService:

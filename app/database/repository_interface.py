@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from app.db.models import Interaction, Item
+from app.database.models import Interaction, Item
 
 
 class AbstractItemRepository(ABC):

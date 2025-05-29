@@ -3,8 +3,8 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 
-from app.db.postgres.factory import PostgresItemRepositoryFactory
-from app.db.postgres.provider import PostgresProvider
+from app.database.postgres.factory import PostgresItemRepositoryFactory
+from app.database.postgres.provider import PostgresProvider
 from sync_worker.event_handlers import MinioEventHandler
 from sync_worker.event_models import MinioWebhookPayload
 

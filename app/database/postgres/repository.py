@@ -5,8 +5,8 @@ from sqlalchemy import and_
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import func
 
-from app.db.models import Interaction, Item
-from app.db.repository_interface import (
+from app.database.models import Interaction, Item
+from app.database.repository_interface import (
     AbstractInteractionRepository,
     AbstractItemRepository,
 )

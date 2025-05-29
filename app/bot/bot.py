@@ -6,7 +6,7 @@ import telebot
 from loguru import logger
 from telebot.types import Message
 
-from app.db.models import Item
+from app.database.models import Item
 from app.service.facade import MemeOracleService
 
 
