@@ -24,15 +24,14 @@ class MemeOracleService:
         self.item_repo_factory = item_repo_factory
         self.interaction_repo_factory = interaction_repo_factory
 
-    def get_next_unseen_item(self, user_id: int) -> Optional[Item]:
+    def get_unseen_items(self, user_id: int) -> Optional[list[Item]]:
         session = self.provider.get_session()
         item_repo = self.item_repo_factory.create(session)
 
         unseen_items = item_repo.list_unseen(user_id)
         if not unseen_items:
             return None
-
-        return unseen_items[0]  # the most fresh item
+        return unseen_items
 
     def log_interaction(self, user_id: int, item_id: str) -> None:
         session = self.provider.get_session()
@@ -46,5 +45,7 @@ class MemeOracleService:
     def get_object(self, object_name: str) -> BytesIO:
         return self.storage.get_object(object_name=object_name)
 
-    def get_random_object(self) -> BytesIO:
-        return self.storage.get_random_object()
+    def get_random_item(self) -> Optional[Item]:
+        session = self.provider.get_session()
+        item_repo = self.item_repo_factory.create(session)
+        return item_repo.random_item()

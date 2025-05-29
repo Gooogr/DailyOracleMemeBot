@@ -18,42 +18,63 @@ class MemeOracleBot:
 
     # only for testers
     def handle_random(self, message):
-        if message.from_user.id not in self.get_authorized_testers():
+        user_id = message.from_user.id
+        if user_id not in self.get_authorized_testers():
             self.bot.reply_to(message, "Unknown command.")
             return
-        s3_object = self.service.get_random_object()
-        if not s3_object:
-            self.bot.reply_to(message, "No prophecies found.")
-            return
-        # TODO: add video support as well
-        self.bot.send_photo(message.chat.id, s3_object)
-
-    def handle_ask_oracle(self, message):
-        user_id = message.from_user.id
-        item = self.service.get_next_unseen_item(user_id)
-        logger.info(item)
-
+        item = self.service.get_random_item()
         if not item:
             self.bot.reply_to(message, "No prophecies found.")
             return
-
-        s3_object = self.service.get_object(item.s3_name)  # raise error in storage level
-
         try:
+            s3_object = self.service.get_object(item.s3_name)
             if item.type == "image":
                 self.bot.send_photo(message.chat.id, s3_object)
-                self.service.log_interaction(user_id, item.id)
-                logger.info(f"Send image to {user_id}, item {item}")
+                logger.info(f"Sent image to {user_id}, item {item}")
             elif item.type == "video":
                 self.bot.send_video(message.chat.id, s3_object)
-                self.service.log_interaction(user_id, item.id)
-                logger.info(f"Send video to {user_id}, item {item}")
+                logger.info(f"Sent video to {user_id}, item {item}")
             else:
-                logger.error(f"Got undefined item type {item.type}. Should be `image` or `video`")
-        # TODO: log log_intercation Excelption as well. How to make it independent from provider?
+                logger.error(f"Undefined item type {item.type} for item {item}")
+                self.bot.reply_to(message, "No prophecies found.")
         except telebot.apihelper.ApiTelegramException as e:
-            logger.error(f"Can't send {s3_object.name} with error {e}")
+            self.bot.reply_to(message, "No prophecies found.")
+            logger.warning(f"Failed to send {item.s3_name} for user {user_id}: {e}")
+        except Exception as e:
+            self.bot.reply_to(message, "No prophecies found.")
+            logger.error(f"Unexpected error for item {item.s3_name}: {e}")
+
+    def handle_ask_oracle(self, message):
+        user_id = message.from_user.id
+        unseen_items = self.service.get_unseen_items(user_id)
+
+        if not unseen_items:
+            self.bot.reply_to(message, "No prophecies found.")
             return
+
+        for item in unseen_items:
+            try:
+                s3_object = self.service.get_object(item.s3_name)  # May raise if object not found
+
+                if item.type == "image":
+                    self.bot.send_photo(message.chat.id, s3_object)
+                    logger.info(f"Sent image to {user_id}, item {item}")
+                elif item.type == "video":
+                    self.bot.send_video(message.chat.id, s3_object)
+                    logger.info(f"Sent video to {user_id}, item {item}")
+                else:
+                    logger.error(f"Undefined item type {item.type} for item {item}")
+                    continue
+
+                self.service.log_interaction(user_id, item.id)
+                break
+
+            except telebot.apihelper.ApiTelegramException as e:
+                logger.warning(f"Failed to send {item.s3_name} for user {user_id}: {e}")
+            except Exception as e:
+                logger.error(f"Unexpected error for item {item.s3_name}: {e}")
+        else:
+            self.bot.reply_to(message, "No prophecies found.")
 
     def _register_handlers(self):
         self.bot.message_handler(commands=["ask_oracle"])(self.handle_ask_oracle)
