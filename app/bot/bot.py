@@ -34,7 +34,9 @@ class MemeOracleBot:
             self.bot.reply_to(message, "Unknown command.")
             return
         item = self.service.get_random_item()
-        self._try_send_item(chat_id, user_id, item)
+        status = self._try_send_item(chat_id, user_id, item)
+        if status != SendStatus.SUCCESS:
+            self.bot.reply_to(message, "Failed to send object")
 
     def handle_ask_oracle(self, message: Message) -> None:
         user_id = message.from_user.id
@@ -73,7 +75,7 @@ class MemeOracleBot:
             return SendStatus.SUCCESS
 
         except telebot.apihelper.ApiTelegramException as e:
-            logger.warning(f"Telegram error for {item.s3_name} to {user_id}: {e}")
+            logger.error(f"Telegram error for {item.s3_name} to {user_id}: {e}")
             return SendStatus.TELEGRAM_ERROR
         except Exception as e:
             logger.error(f"Unexpected error for {item.s3_name} to {user_id}: {e}")
