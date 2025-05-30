@@ -31,4 +31,3 @@ class InteractionService:
         now_date = datetime.now(timezone.utc).date()
         last_date = last.interaction_dt.date()
         return now_date > last_date
-
