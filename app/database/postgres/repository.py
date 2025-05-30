@@ -29,23 +29,44 @@ class PostgresItemRepository(AbstractItemRepository):
         self.session.delete(item)
         self.session.commit()
 
-    def list_unseen(self, user_id: int) -> Optional[list[Item]]:
-        InteractionAlias = aliased(Interaction)
+    def list_least_viewed_unseen(self, user_id: int, k: int = 10) -> list[Item]:
+        """
+        SQL analog
+        SELECT items.*
+        FROM items
+        LEFT JOIN interactions i ON items.id = i.item_id /*interactions of all users*/
+        LEFT JOIN interactions ui ON items.id = ui.item_id AND ui.user_id = :user_id /*interactions of :user_id*/
+        WHERE ui.item_id IS NULL
+        GROUP BY items.id
+        ORDER BY COUNT(i.id) ASC, items.upload_dt DESC
+        LIMIT :k;
+        """
+        try:
+            InteractionsAll = aliased(Interaction)
+            InteractionsUser = aliased(Interaction)
 
-        query = (
-            self.session.query(Item)
-            .outerjoin(
-                InteractionAlias,
-                and_(
-                    Item.id == InteractionAlias.item_id,
-                    InteractionAlias.user_id == user_id,
-                ),
+            query = (
+                self.session.query(Item)
+                .outerjoin(InteractionsAll, Item.id == InteractionsAll.item_id)  # 'outerjoin' == 'LEFT JOIN' in SQL
+                .outerjoin(
+                    InteractionsUser,
+                    and_(
+                        Item.id == InteractionsUser.item_id,
+                        InteractionsUser.user_id == user_id,
+                    ),
+                )
+                .filter(InteractionsUser.item_id.is_(None))  # unseen by user
+                .group_by(Item.id)
+                .order_by(
+                    func.count(InteractionsAll.id).asc(),  # least seen by all users
+                    Item.upload_dt.desc(),  # but the most fresh
+                )
+                .limit(k)
             )
-            .filter(InteractionAlias.item_id.is_(None))
-            .order_by(Item.upload_dt.desc())
-        )
-
-        return query.all()
+            return query.all()
+        except SQLAlchemyError as e:
+            self.session.rollback()
+            raise DatabaseError(f"Failed to list unseen items for user {user_id}") from e
 
     def random_item(self) -> Optional[Item]:
         return self.session.query(Item).order_by(func.random()).limit(1).first()
