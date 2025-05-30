@@ -21,11 +21,13 @@ class InteractionService:
     def get_last_interaction(self, user_id: int) -> Optional[Interaction]:
         session = self.provider.get_session()
         repo = self.interaction_repo_factory.create(session)
-        interactions = repo.read(user_id)
+        interactions = repo.list_user_interactions_desc(user_id)
         return interactions[0] if interactions else None
 
     def can_receive_new_object(self, user_id: int) -> bool:
         last = self.get_last_interaction(user_id)
         if not last:
             return True
-        return last.interaction_dt <= datetime.now(timezone.utc) - timedelta(days=1)
+        now_date = datetime.now(timezone.utc).date()
+        last_date = last.interaction_dt.date()
+        return now_date > last_date
