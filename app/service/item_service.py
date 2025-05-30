@@ -13,16 +13,13 @@ class ItemService:
         self.provider = provider
         self.item_repo_factory = item_repo_factory
 
-    def _get_unseen_items(self, user_id: int) -> Optional[list[Item]]:
+    def get_next_unseen_item(self, user_id: int) -> Optional[Item]:
         session = self.provider.get_session()
         item_repo = self.item_repo_factory.create(session)
-        return item_repo.list_least_viewed_unseen(user_id, self.unseen_limit)
-
-    def get_next_unseen_item(self, user_id: int) -> Optional[Item]:
-        items = self._get_unseen_items(user_id)
+        items = item_repo.list_least_viewed_unseen(user_id, self.unseen_limit)
         return items[0] if items else None
 
-    def get_random_item(self) -> Optional[Item]:
+    def get_random_item(self) -> Item:
         session = self.provider.get_session()
         item_repo = self.item_repo_factory.create(session)
         return item_repo.random_item()
