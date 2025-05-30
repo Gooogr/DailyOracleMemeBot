@@ -11,7 +11,7 @@ class AbstractItemRepository(ABC):
         pass
 
     @abstractmethod
-    def read(self, item_id: str) -> Optional[Item]:
+    def read(self, item_id: str) -> Item:
         pass
 
     @abstractmethod
@@ -19,7 +19,7 @@ class AbstractItemRepository(ABC):
         pass
 
     @abstractmethod
-    def list_unseen(self, user_id: int) -> Optional[list[Item]]:
+    def list_least_viewed_unseen(self, user_id: int, k: int) -> list[Item]:
         pass
 
     @abstractmethod
@@ -33,5 +33,5 @@ class AbstractInteractionRepository(ABC):
         pass
 
     @abstractmethod
-    def read(self, user_id: int) -> Optional[list[Interaction]]:
+    def list_user_interactions_desc(self, user_id: int) -> list[Interaction]:
         pass
