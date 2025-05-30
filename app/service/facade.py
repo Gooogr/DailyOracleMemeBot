@@ -8,6 +8,9 @@ from app.storage.storage_interface import AbstractStorage
 
 
 class MemeOracleService:
+
+    items_candidates_amount = 10
+
     def __init__(
         self,
         item_service: ItemService,
@@ -18,10 +21,10 @@ class MemeOracleService:
         self.interaction_service = interaction_service
         self.storage = storage
 
-    def get_next_eligible_item(self, user_id: int) -> Optional[Item]:
+    def get_candidate_items(self, user_id: int) -> Optional[list[Item]]:
         if not self.interaction_service.can_receive_new_object(user_id):
             return None
-        return self.item_service.get_next_unseen_item(user_id)
+        return self.item_service.get_top_k_unseen_items(user_id, self.items_candidates_amount)
 
     def get_random_item(self) -> Optional[Item]:
         return self.item_service.get_random_item()
