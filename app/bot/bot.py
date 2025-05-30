@@ -1,6 +1,6 @@
 import os
 from enum import Enum
-from functools import cache
+from typing import Optional
 
 import telebot
 from loguru import logger
@@ -21,10 +21,30 @@ class SendStatus(Enum):
     UNKNOWN_ERROR = 6
 
 
+class InteractionResult:
+    def __init__(self, status: SendStatus, item: Optional[Item] = None, reason: Optional[str] = None):
+        self.status = status
+        self.item = item
+        self.reason = reason
+
+
+class AccessControl:
+    def __init__(self, env_var: str = "AUTHORIZED_TESTERS_TG_IDS") -> None:
+        self.allowed_ids = self._parse_env(env_var)
+
+    @staticmethod
+    def _parse_env(env_var: str) -> set:
+        raw = os.getenv(env_var, "")
+        return set(map(int, raw.split(","))) if raw else set()
+
+    def is_authorized(self, user_id: int) -> bool:
+        return user_id in self.allowed_ids
+
+
 class MemeOracleBot:
     def __init__(self, service: MemeOracleService, token: str) -> None:
         self.bot = telebot.TeleBot(token)
-        self.handler = CommandHandler(service, self.bot)
+        self.handler = CommandHandler(service, self.bot, AccessControl())
         self._register_handlers()
 
     def _register_handlers(self) -> None:
@@ -37,9 +57,10 @@ class MemeOracleBot:
 
 
 class CommandHandler:
-    def __init__(self, service: MemeOracleService, bot: telebot.TeleBot):
+    def __init__(self, service: MemeOracleService, bot: telebot.TeleBot, access: AccessControl):
         self.service = service
         self.bot = bot
+        self.access = access
         self.sender = TelegramSender(bot, service)
 
     def help(self, message: Message) -> None:
@@ -49,7 +70,7 @@ class CommandHandler:
         user_id = message.from_user.id
         chat_id = message.chat.id
 
-        if user_id not in self._get_authorized_testers():
+        if not self.access.is_authorized(user_id):
             self.bot.reply_to(message, "Unknown command.")
             return
 
@@ -66,7 +87,9 @@ class CommandHandler:
             self.bot.reply_to(message, "No prophecies found.")
             return
 
-        self.sender.send_item(chat_id, user_id, item)
+        result = self.sender.send_item(chat_id, user_id, item)
+        if result.status != SendStatus.SUCCESS:
+            self.bot.reply_to(message, "Failed to send object")
 
     def ask_oracle(self, message: Message) -> None:
         user_id = message.from_user.id
@@ -75,48 +98,41 @@ class CommandHandler:
         items = self.service.get_candidate_items(user_id)
         if items is None:
             self.bot.reply_to(message, "Come back tomorrow for more wisdom.")
+            logger.info(f"User {user_id} got message of hitting daily limit")
             return
         if not items:
             self.bot.reply_to(message, "No prophecies found.")
+            logger.warning(f"Didn't find any candidates for user {user_id}")
             return
 
         for item in items:
-            status = self.sender.send_item(chat_id, user_id, item)
-            if status == SendStatus.SUCCESS:
+            result = self.sender.send_item(chat_id, user_id, item)
+            if result.status == SendStatus.SUCCESS:
                 try:
                     self.service.log_interaction(user_id, item.id)
                 except DatabaseError:
-                    logger.warning(f"Failed to log interaction for user {user_id} and item {item.id}")
+                    logger.error(f"Failed to log interaction for user {user_id} and item {item.id}")
                 except Exception as e:
                     logger.error(f"Unexpected error while logging: {e}")
                 return
 
         self.bot.reply_to(message, "No prophecies found.")
 
-    @cache
-    def _get_authorized_testers(self) -> set:
-        testers = os.getenv("AUTHORIZED_TESTERS_TG_IDS", "")
-        return set(map(int, testers.split(","))) if testers else set()
-
 
 class TelegramSender:
-    def __init__(
-        self,
-        bot: telebot.TeleBot,
-        service: MemeOracleService,
-    ):
+    def __init__(self, bot: telebot.TeleBot, service: MemeOracleService):
         self.bot = bot
         self.service = service
 
-    def send_item(self, chat_id: int, user_id: int, item: Item) -> SendStatus:
+    def send_item(self, chat_id: int, user_id: int, item: Item) -> InteractionResult:
         try:
             s3_object = self.service.get_object(item.s3_name)
         except (ObjectNotFoundError, StorageError) as e:
-            logger.warning(f"S3 object error ({item.s3_name}) for user {user_id}: {e}")
-            return SendStatus.S3_ERROR
+            logger.error(f"S3 object error ({item.s3_name}) for user {user_id}: {e}")
+            return InteractionResult(status=SendStatus.S3_ERROR, item=item, reason=str(e))
         except Exception as e:
             logger.error(f"Unexpected S3 error for {item.s3_name} to {user_id}: {e}")
-            return SendStatus.UNKNOWN_ERROR
+            return InteractionResult(status=SendStatus.UNKNOWN_ERROR, item=item, reason=str(e))
 
         try:
             if item.type == "image":
@@ -125,13 +141,15 @@ class TelegramSender:
                 self.bot.send_video(chat_id, s3_object)
             else:
                 logger.error(f"Invalid item type '{item.type}' for item: {item}")
-                return SendStatus.INVALID_TYPE
+                return InteractionResult(status=SendStatus.INVALID_TYPE, item=item, reason="Invalid type")
 
             logger.info(f"Sent {item.type} to {user_id}, item: {item}")
-            return SendStatus.SUCCESS
+            return InteractionResult(status=SendStatus.SUCCESS, item=item)
+
         except telebot.apihelper.ApiTelegramException as e:
             logger.error(f"Telegram error for {item.s3_name} to {user_id}: {e}")
-            return SendStatus.TELEGRAM_ERROR
+            return InteractionResult(status=SendStatus.TELEGRAM_ERROR, item=item, reason=str(e))
+
         except Exception as e:
             logger.error(f"Unexpected Telegram error for {item.s3_name} to {user_id}: {e}")
-            return SendStatus.UNKNOWN_ERROR
+            return InteractionResult(status=SendStatus.UNKNOWN_ERROR, item=item, reason=str(e))
