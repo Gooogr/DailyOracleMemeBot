@@ -28,4 +28,7 @@ class InteractionService:
         last = self.get_last_interaction(user_id)
         if not last:
             return True
-        return last.interaction_dt <= datetime.now(timezone.utc) - timedelta(days=1)
+        now_date = datetime.now(timezone.utc).date()
+        last_date = last.interaction_dt.date()
+        return now_date > last_date
+
