@@ -6,10 +6,9 @@ import telebot
 from loguru import logger
 from telebot.types import Message
 
+from app.database.exceptions import DatabaseError, ItemNotFoundError
 from app.database.models import Item
 from app.service.facade import MemeOracleService
-
-from app.database.exceptions import DatabaseError, ItemNotFoundError
 from app.storage.exceptions import ObjectNotFoundError, StorageError
 
 
@@ -25,17 +24,32 @@ class SendStatus(Enum):
 class MemeOracleBot:
     def __init__(self, service: MemeOracleService, token: str) -> None:
         self.bot = telebot.TeleBot(token)
-        self.service = service
+        self.handler = CommandHandler(service, self.bot)
         self._register_handlers()
 
-    def handle_help(self, message: Message) -> None:
+    def _register_handlers(self) -> None:
+        self.bot.message_handler(commands=["ask_oracle"])(self.handler.ask_oracle)
+        self.bot.message_handler(commands=["random"])(self.handler.random)
+        self.bot.message_handler(commands=["help"])(self.handler.help)
+
+    def run(self) -> None:
+        self.bot.infinity_polling()
+
+
+class CommandHandler:
+    def __init__(self, service: MemeOracleService, bot: telebot.TeleBot):
+        self.service = service
+        self.bot = bot
+        self.sender = TelegramSender(bot, service)
+
+    def help(self, message: Message) -> None:
         self.bot.reply_to(message, "Ask the Oracle by using /ask_oracle.")
 
-    # only for authorized testers
-    def handle_random(self, message: Message) -> None:
+    def random(self, message: Message) -> None:
         user_id = message.from_user.id
         chat_id = message.chat.id
-        if user_id not in self.get_authorized_testers():
+
+        if user_id not in self._get_authorized_testers():
             self.bot.reply_to(message, "Unknown command.")
             return
 
@@ -49,27 +63,25 @@ class MemeOracleBot:
             return
 
         if not item:
-            self.bot.reply_to(message, "Got none instead of item object")
-            return
-
-        status = self._try_send_item(chat_id, user_id, item)
-        if status != SendStatus.SUCCESS:
-            self.bot.reply_to(message, "Failed to send object")
-
-    def handle_ask_oracle(self, message: Message) -> None:
-        user_id = message.from_user.id
-        chat_id = message.chat.id
-
-        candidate_items = self.service.get_candidate_items(user_id)
-        if candidate_items is None:
-            self.bot.reply_to(message, "Come back tomorrow for more wisdom.")
-            return
-        if not candidate_items:
             self.bot.reply_to(message, "No prophecies found.")
             return
 
-        for item in candidate_items:
-            status = self._try_send_item(chat_id, user_id, item)
+        self.sender.send_item(chat_id, user_id, item)
+
+    def ask_oracle(self, message: Message) -> None:
+        user_id = message.from_user.id
+        chat_id = message.chat.id
+
+        items = self.service.get_candidate_items(user_id)
+        if items is None:
+            self.bot.reply_to(message, "Come back tomorrow for more wisdom.")
+            return
+        if not items:
+            self.bot.reply_to(message, "No prophecies found.")
+            return
+
+        for item in items:
+            status = self.sender.send_item(chat_id, user_id, item)
             if status == SendStatus.SUCCESS:
                 try:
                     self.service.log_interaction(user_id, item.id)
@@ -78,19 +90,29 @@ class MemeOracleBot:
                 except Exception as e:
                     logger.error(f"Unexpected error while logging: {e}")
                 return
+
         self.bot.reply_to(message, "No prophecies found.")
 
-    def _try_send_item(self, chat_id: int, user_id: int, item: Item) -> SendStatus:
-        if not item:
-            return SendStatus.UNKNOWN_ERROR
+    @cache
+    def _get_authorized_testers(self) -> set:
+        testers = os.getenv("AUTHORIZED_TESTERS_TG_IDS", "")
+        return set(map(int, testers.split(","))) if testers else set()
 
+
+class TelegramSender:
+    def __init__(
+        self,
+        bot: telebot.TeleBot,
+        service: MemeOracleService,
+    ):
+        self.bot = bot
+        self.service = service
+
+    def send_item(self, chat_id: int, user_id: int, item: Item) -> SendStatus:
         try:
             s3_object = self.service.get_object(item.s3_name)
-        except ObjectNotFoundError:
-            # TODO: add logger error
-            return SendStatus.S3_ERROR
-        except StorageError:
-            # TODO: add logger error
+        except (ObjectNotFoundError, StorageError) as e:
+            logger.warning(f"S3 object error ({item.s3_name}) for user {user_id}: {e}")
             return SendStatus.S3_ERROR
         except Exception as e:
             logger.error(f"Unexpected S3 error for {item.s3_name} to {user_id}: {e}")
@@ -102,28 +124,14 @@ class MemeOracleBot:
             elif item.type == "video":
                 self.bot.send_video(chat_id, s3_object)
             else:
-                logger.error(f"Undefined item type: {item.type} (item: {item})")
+                logger.error(f"Invalid item type '{item.type}' for item: {item}")
                 return SendStatus.INVALID_TYPE
 
             logger.info(f"Sent {item.type} to {user_id}, item: {item}")
             return SendStatus.SUCCESS
-
         except telebot.apihelper.ApiTelegramException as e:
             logger.error(f"Telegram error for {item.s3_name} to {user_id}: {e}")
             return SendStatus.TELEGRAM_ERROR
         except Exception as e:
-            logger.error(f"Unexpected error for {item.s3_name} to {user_id}: {e}")
+            logger.error(f"Unexpected Telegram error for {item.s3_name} to {user_id}: {e}")
             return SendStatus.UNKNOWN_ERROR
-
-    def _register_handlers(self) -> None:
-        self.bot.message_handler(commands=["ask_oracle"])(self.handle_ask_oracle)
-        self.bot.message_handler(commands=["random"])(self.handle_random)
-        self.bot.message_handler(commands=["help"])(self.handle_help)
-
-    def run(self) -> None:
-        self.bot.infinity_polling()
-
-    @cache
-    def get_authorized_testers(self) -> set:
-        testers = os.getenv("AUTHORIZED_TESTERS_TG_IDS", "")
-        return set(map(int, testers.split(","))) if testers else set()
