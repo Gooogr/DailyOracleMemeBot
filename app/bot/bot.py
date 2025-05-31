@@ -21,6 +21,9 @@ class SendStatus(Enum):
     S3_ERROR = 4
     DB_ERROR = 5
     UNKNOWN_ERROR = 6
+    LIMIT_REACHED = 7
+    NO_CANDIDATES = 8
+    SEND_FAILED = 9
 
 
 @dataclass
@@ -32,7 +35,6 @@ class InteractionResult:
 
 
 class AccessControl:
-
     env_key = "AUTHORIZED_TESTERS_TG_IDS"
 
     def __init__(self) -> None:
@@ -43,7 +45,7 @@ class AccessControl:
         raw = os.getenv(env_var, "")
         return set(map(int, raw.split(","))) if raw else set()
 
-    def is_authorized(self, user_id: int) -> bool:
+    def is_tester(self, user_id: int) -> bool:
         return user_id in self.allowed_ids
 
 
@@ -64,85 +66,57 @@ class MemeOracleBot:
 
 class CommandHandler:
     def __init__(self, service: MemeOracleService, bot: telebot.TeleBot, access: AccessControl):
-        self.service = service
         self.bot = bot
         self.access = access
-        self.sender = TelegramSender(bot, service)
+        self.sender = TelegramSender(bot)
+        self.interactor = OracleInteractor(service)
+
+    def _reply(self, message: Message, text: str) -> None:
+        self.bot.reply_to(message, text)
 
     def help(self, message: Message) -> None:
-        self.bot.reply_to(message, "Ask the Oracle by using `/ask_oracle`.")
+        self._reply(message, "Ask the Oracle by using `/ask_oracle`.")
 
+    # only for testers and devs
     def random(self, message: Message) -> None:
         user_id = message.from_user.id
 
-        if not self.access.is_authorized(user_id):
-            self.bot.reply_to(message, "Unknown command.")
+        if not self.access.is_tester(user_id):
+            self._reply(message, "Unknown command.")
             return
 
-        try:
-            item = self.service.get_random_item()
-        except (DatabaseError, ItemNotFoundError):
-            self.bot.reply_to(message, "Failed to get random item from service layer")
-            return
-        except Exception:
-            self.bot.reply_to(message, "Unexpected error occurred.")
-            return
-
-        if not item:
-            self.bot.reply_to(message, "No prophecies found.")
-            return
-
-        result = self.sender.send_item(message, item)
+        result = self.interactor.fetch_random(user_id)
         if result.status != SendStatus.SUCCESS:
-            self.bot.reply_to(message, "Failed to send object")
+            self._reply(message, result.reason or "Something went wrong.")
+            return
+
+        self.sender.send(message, result.item, result.file)
 
     def ask_oracle(self, message: Message) -> None:
         user_id = message.from_user.id
+        result = self.interactor.process_daily_request(user_id)
 
-        items = self.service.get_candidate_items(user_id)
-        if items is None:
-            self.bot.reply_to(message, "Come back tomorrow for more wisdom.")
-            logger.info(f"User {user_id} got message of hitting daily limit")
-            return
-        if not items:
-            self.bot.reply_to(message, "No prophecies found.")
-            logger.warning(f"Didn't find any candidates for user {user_id}")
-            return
-
-        for item in items:
-            result = self.sender.send_item(message, item)
-            if result.status == SendStatus.SUCCESS:
-                try:
-                    self.service.log_interaction(user_id, item.id)
-                except DatabaseError:
-                    logger.error(f"Failed to log interaction for user {user_id} and item {item.id}")
-                except Exception as e:
-                    logger.error(f"Unexpected error while logging: {e}")
-                return
-
-        self.bot.reply_to(message, "No prophecies found.")
+        match result.status:
+            case SendStatus.SUCCESS:
+                self.sender.send(message, result.item, result.file)
+            case SendStatus.LIMIT_REACHED:
+                self._reply(message, "Oracle is tired, come back tomorrow.")
+            case SendStatus.NO_CANDIDATES:
+                self._reply(message, "No prophecies found.")
+            case SendStatus.SEND_FAILED:
+                self._reply(message, "Failed to send prophecy.")
+            case _:
+                self._reply(message, "Something went wrong.")
 
 
-class TelegramSender:
-    SEND_METHODS: dict[ItemType, Callable] = {
-        "image": telebot.TeleBot.send_photo,
-        "video": telebot.TeleBot.send_video,
-    }
-
-    def __init__(self, bot: telebot.TeleBot, service: MemeOracleService):
-        self.bot = bot
+class OracleInteractor:
+    def __init__(self, service: MemeOracleService):
         self.service = service
 
-    def send_item(self, message: Message, item: Item) -> InteractionResult:
-        get_result = self._get_object(item)
-        if get_result.status != SendStatus.SUCCESS:
-            return get_result
-        return self._send_object(message, item, get_result.file)
-
-    def _get_object(self, item: Item) -> InteractionResult:
+    def _get_file(self, item: Item) -> InteractionResult:
         try:
-            s3_object = self.service.get_object(item.s3_name)
-            return InteractionResult(status=SendStatus.SUCCESS, item=item, file=s3_object)
+            file = self.service.get_object(item.s3_name)
+            return InteractionResult(status=SendStatus.SUCCESS, item=item, file=file)
         except (ObjectNotFoundError, StorageError) as e:
             logger.error(f"S3 object error for object {item.s3_name}: {e}")
             return InteractionResult(status=SendStatus.S3_ERROR, item=item, reason=str(e))
@@ -150,16 +124,70 @@ class TelegramSender:
             logger.error(f"Unexpected S3 error for object {item.s3_name}: {e}")
             return InteractionResult(status=SendStatus.UNKNOWN_ERROR, item=item, reason=str(e))
 
-    def _send_object(self, message: Message, item: Item, s3_object: BytesIO) -> InteractionResult:
-        user_id = message.from_user.id
+    def fetch_random(self, user_id: int) -> InteractionResult:
+        try:
+            item = self.service.get_random_item()
+        except (DatabaseError, ItemNotFoundError) as e:
+            logger.warning(f"Random item fetch error: {e}")
+            return InteractionResult(status=SendStatus.DB_ERROR, reason="Failed to get random item.")
+        except Exception as e:
+            logger.exception(f"Unexpected error in fetch_random: {e}")
+            return InteractionResult(status=SendStatus.UNKNOWN_ERROR, reason="Unexpected error occurred.")
+
+        if not item:
+            return InteractionResult(status=SendStatus.UNKNOWN_ERROR, reason="No prophecies found.")
+
+        file_result = self._get_file(item)
+        if file_result.status != SendStatus.SUCCESS:
+            return file_result
+
+        return file_result
+
+    def process_daily_request(self, user_id: int) -> InteractionResult:
+        items = self.service.get_candidate_items(user_id)
+
+        if items is None:
+            logger.info(f"User {user_id} hit daily limit")
+            return InteractionResult(status=SendStatus.LIMIT_REACHED)
+
+        if not items:
+            logger.warning(f"No candidates for user {user_id}")
+            return InteractionResult(status=SendStatus.NO_CANDIDATES)
+
+        for item in items:
+            file_result = self._get_file(item)
+            if file_result.status != SendStatus.SUCCESS:
+                continue
+
+            try:
+                self.service.log_interaction(user_id, item.id)
+            except Exception as e:
+                logger.warning(f"Interaction logging failed for user {user_id}, item {item.id}: {e}")
+            file_result.status = SendStatus.SUCCESS
+            return file_result
+
+        return InteractionResult(status=SendStatus.SEND_FAILED)
+
+
+class TelegramSender:
+    def __init__(self, bot: telebot.TeleBot):
+        self.bot = bot
+        self.send_methods: dict[ItemType, Callable] = {
+            "image": self.bot.send_photo,
+            "video": self.bot.send_video,
+        }
+
+    def send(self, message: Message, item: Item, file: BytesIO) -> InteractionResult:
         chat_id = message.chat.id
-        send_method = self.SEND_METHODS.get(item.type)
+        user_id = message.from_user.id
+
+        send_method = self.send_methods.get(item.type)
         if send_method is None:
             logger.error(f"Invalid item type '{item.type}' for item: {item}")
             return InteractionResult(status=SendStatus.INVALID_TYPE, item=item, reason="Invalid type")
 
         try:
-            send_method(chat_id, s3_object)
+            send_method(chat_id, file)
             logger.info(f"Sent {item.type} to {user_id}, item: {item}")
             return InteractionResult(status=SendStatus.SUCCESS, item=item)
         except telebot.apihelper.ApiTelegramException as e:
