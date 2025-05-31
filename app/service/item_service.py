@@ -1,5 +1,3 @@
-from typing import Optional
-
 from app.database.factory_interface import AbstractItemRepositoryFactory
 from app.database.models import Item
 from app.database.provider_interface import AbstractDatabaseProvider

@@ -1,8 +1,7 @@
-import os
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 import telebot
 from loguru import logger
@@ -27,12 +26,31 @@ class SendStatus(Enum):
     SEND_FAILED = 9
 
 
+# @dataclass
+# class InteractionResult:
+#     status: SendStatus
+#     item: Optional[Item] = None
+#     reason: Optional[str] = None
+#     file: Optional[BytesIO] = None
+
+
 @dataclass
-class InteractionResult:
+class InteractionResultBase:
     status: SendStatus
-    item: Optional[Item] = None
+
+
+@dataclass
+class SuccessResult(InteractionResultBase):
+    item: Item
+    file: BytesIO
+
+
+@dataclass
+class FailureResult(InteractionResultBase):
     reason: Optional[str] = None
-    file: Optional[BytesIO] = None
+
+
+InteractionResult = Union[SuccessResult, FailureResult]
 
 
 class MemeOracleBot:
@@ -72,7 +90,7 @@ class CommandHandler:
             return
 
         result = self.interactor.get_random()
-        if result.status != SendStatus.SUCCESS:
+        if isinstance(result, FailureResult):
             self._reply(message, result.reason or "Something went wrong.")
             return
 
@@ -82,9 +100,12 @@ class CommandHandler:
         user_id = message.from_user.id
         result = self.interactor.get_next_available(user_id)
 
+        if isinstance(result, SuccessResult):
+            self.sender.send(message, result.item, result.file)
+            return
+
+        # Handle failure sends
         match result.status:
-            case SendStatus.SUCCESS:
-                self.sender.send(message, result.item, result.file)
             case SendStatus.LIMIT_REACHED:
                 self._reply(message, "Oracle is tired, come back tomorrow.")
             case SendStatus.NO_CANDIDATES:
@@ -102,26 +123,26 @@ class OracleInteractor:
     def _get_file(self, item: Item) -> InteractionResult:
         try:
             file = self.service.get_object(item.s3_name)
-            return InteractionResult(status=SendStatus.SUCCESS, item=item, file=file)
+            return SuccessResult(status=SendStatus.SUCCESS, item=item, file=file)
         except (ObjectNotFoundError, StorageError) as e:
             logger.error(f"S3 object error for object {item.s3_name}: {e}")
-            return InteractionResult(status=SendStatus.S3_ERROR, item=item, reason=str(e))
+            return FailureResult(status=SendStatus.S3_ERROR, reason=str(e))
         except Exception as e:
             logger.error(f"Unexpected S3 error for object {item.s3_name}: {e}")
-            return InteractionResult(status=SendStatus.UNKNOWN_ERROR, item=item, reason=str(e))
+            return FailureResult(status=SendStatus.UNKNOWN_ERROR, reason=str(e))
 
     def get_random(self) -> InteractionResult:
         try:
             item = self.service.get_random_item()
         except (DatabaseError, ItemNotFoundError) as e:
             logger.warning(f"Get random item error: {e}")
-            return InteractionResult(status=SendStatus.DB_ERROR, reason="Failed to get random item.")
+            return FailureResult(status=SendStatus.DB_ERROR, reason="Failed to get random item.")
         except Exception as e:
             logger.exception(f"Unexpected error in get_random: {e}")
-            return InteractionResult(status=SendStatus.UNKNOWN_ERROR, reason="Unexpected error occurred.")
+            return FailureResult(status=SendStatus.UNKNOWN_ERROR, reason="Unexpected error occurred.")
 
         if not item:
-            return InteractionResult(status=SendStatus.UNKNOWN_ERROR, reason="No prophecies found.")
+            return FailureResult(status=SendStatus.UNKNOWN_ERROR, reason="No prophecies found.")
 
         file_result = self._get_file(item)
         if file_result.status != SendStatus.SUCCESS:
@@ -134,11 +155,11 @@ class OracleInteractor:
 
         if items is None:
             logger.info(f"User {user_id} hit daily limit")
-            return InteractionResult(status=SendStatus.LIMIT_REACHED)
+            return FailureResult(status=SendStatus.LIMIT_REACHED)
 
         if not items:
             logger.warning(f"No candidates for user {user_id}")
-            return InteractionResult(status=SendStatus.NO_CANDIDATES)
+            return FailureResult(status=SendStatus.NO_CANDIDATES)
 
         for item in items:
             file_result = self._get_file(item)
@@ -152,7 +173,7 @@ class OracleInteractor:
             file_result.status = SendStatus.SUCCESS
             return file_result
 
-        return InteractionResult(status=SendStatus.SEND_FAILED)
+        return FailureResult(status=SendStatus.SEND_FAILED)
 
 
 class TelegramSender:
@@ -170,15 +191,15 @@ class TelegramSender:
         send_method = self.send_methods.get(item.type)
         if send_method is None:
             logger.error(f"Invalid item type '{item.type}' for item: {item}")
-            return InteractionResult(status=SendStatus.INVALID_TYPE, item=item, reason="Invalid type")
+            return FailureResult(status=SendStatus.INVALID_TYPE, reason="Invalid type")
 
         try:
             send_method(chat_id, file)
             logger.info(f"Sent {item.type} to {user_id}, item: {item}")
-            return InteractionResult(status=SendStatus.SUCCESS, item=item)
+            return SuccessResult(status=SendStatus.SUCCESS, item=item, file=file)
         except telebot.apihelper.ApiTelegramException as e:
             logger.error(f"Telegram error for {item.s3_name} to {user_id}: {e}")
-            return InteractionResult(status=SendStatus.TELEGRAM_ERROR, item=item, reason=str(e))
+            return FailureResult(status=SendStatus.TELEGRAM_ERROR, reason=str(e))
         except Exception as e:
             logger.error(f"Unexpected Telegram error for {item.s3_name} to {user_id}: {e}")
-            return InteractionResult(status=SendStatus.UNKNOWN_ERROR, item=item, reason=str(e))
+            return FailureResult(status=SendStatus.UNKNOWN_ERROR, reason=str(e))

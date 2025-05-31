@@ -13,9 +13,3 @@ class ObjectNotFoundError(StorageError):
         super().__init__(f"Object '{object_name}' not found in  bucket '{bucket_name}'.")
         self.object_name = object_name
         self.bucket_name = bucket_name
-
-
-class ObjectListingError(StorageError):
-    def __init__(self, bucket: str):
-        super().__init__(f"Failed to list objects in bucket '{bucket}'.")
-        self.bucket = bucket
