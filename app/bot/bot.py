@@ -70,7 +70,7 @@ class CommandHandler:
         self.sender = TelegramSender(bot, service)
 
     def help(self, message: Message) -> None:
-        self.bot.reply_to(message, "Ask the Oracle by using /ask_oracle.")
+        self.bot.reply_to(message, "Ask the Oracle by using `/ask_oracle`.")
 
     def random(self, message: Message) -> None:
         user_id = message.from_user.id
@@ -124,6 +124,11 @@ class CommandHandler:
 
 
 class TelegramSender:
+    SEND_METHODS: dict[ItemType, Callable] = {
+        "image": telebot.TeleBot.send_photo,
+        "video": telebot.TeleBot.send_video,
+    }
+
     def __init__(self, bot: telebot.TeleBot, service: MemeOracleService):
         self.bot = bot
         self.service = service
@@ -148,7 +153,7 @@ class TelegramSender:
     def _send_object(self, message: Message, item: Item, s3_object: BytesIO) -> InteractionResult:
         user_id = message.from_user.id
         chat_id = message.chat.id
-        send_method = self._get_send_method(item.type)
+        send_method = self.SEND_METHODS.get(item.type)
         if send_method is None:
             logger.error(f"Invalid item type '{item.type}' for item: {item}")
             return InteractionResult(status=SendStatus.INVALID_TYPE, item=item, reason="Invalid type")
@@ -163,9 +168,3 @@ class TelegramSender:
         except Exception as e:
             logger.error(f"Unexpected Telegram error for {item.s3_name} to {user_id}: {e}")
             return InteractionResult(status=SendStatus.UNKNOWN_ERROR, item=item, reason=str(e))
-
-    def _get_send_method(self, item_type: ItemType) -> Optional[Callable]:
-        return {
-            "image": self.bot.send_photo,
-            "video": self.bot.send_video,
-        }.get(item_type)
