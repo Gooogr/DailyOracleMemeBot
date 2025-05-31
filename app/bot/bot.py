@@ -85,7 +85,7 @@ class CommandHandler:
             self._reply(message, "Unknown command.")
             return
 
-        result = self.interactor.fetch_random(user_id)
+        result = self.interactor.get_random()
         if result.status != SendStatus.SUCCESS:
             self._reply(message, result.reason or "Something went wrong.")
             return
@@ -94,7 +94,7 @@ class CommandHandler:
 
     def ask_oracle(self, message: Message) -> None:
         user_id = message.from_user.id
-        result = self.interactor.process_daily_request(user_id)
+        result = self.interactor.get_next_available(user_id)
 
         match result.status:
             case SendStatus.SUCCESS:
@@ -124,14 +124,14 @@ class OracleInteractor:
             logger.error(f"Unexpected S3 error for object {item.s3_name}: {e}")
             return InteractionResult(status=SendStatus.UNKNOWN_ERROR, item=item, reason=str(e))
 
-    def fetch_random(self, user_id: int) -> InteractionResult:
+    def get_random(self) -> InteractionResult:
         try:
             item = self.service.get_random_item()
         except (DatabaseError, ItemNotFoundError) as e:
-            logger.warning(f"Random item fetch error: {e}")
+            logger.warning(f"Get random item error: {e}")
             return InteractionResult(status=SendStatus.DB_ERROR, reason="Failed to get random item.")
         except Exception as e:
-            logger.exception(f"Unexpected error in fetch_random: {e}")
+            logger.exception(f"Unexpected error in get_random: {e}")
             return InteractionResult(status=SendStatus.UNKNOWN_ERROR, reason="Unexpected error occurred.")
 
         if not item:
@@ -143,7 +143,7 @@ class OracleInteractor:
 
         return file_result
 
-    def process_daily_request(self, user_id: int) -> InteractionResult:
+    def get_next_available(self, user_id: int) -> InteractionResult:
         items = self.service.get_candidate_items(user_id)
 
         if items is None:
