@@ -1,6 +1,6 @@
-from app.database.factory_interface import AbstractItemRepositoryFactory
+from app.database.interfaces.factory import AbstractItemRepositoryFactory
+from app.database.interfaces.provider import AbstractDatabaseProvider
 from app.database.models import Item
-from app.database.provider_interface import AbstractDatabaseProvider
 
 
 class ItemService:

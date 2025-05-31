@@ -11,11 +11,11 @@ from app.database.exceptions import (
     ItemAlreadyExistsError,
     ItemNotFoundError,
 )
-from app.database.models import Interaction, Item
-from app.database.repository_interface import (
+from app.database.interfaces.repository import (
     AbstractInteractionRepository,
     AbstractItemRepository,
 )
+from app.database.models import Interaction, Item
 
 
 class PostgresItemRepository(AbstractItemRepository):

@@ -2,9 +2,9 @@ import hashlib
 import os
 from datetime import datetime
 
-from app.database.factory_interface import AbstractItemRepositoryFactory
-from app.database.provider_interface import AbstractDatabaseProvider
-from app.database.repository_interface import AbstractItemRepository
+from app.database.interfaces.factory import AbstractItemRepositoryFactory
+from app.database.interfaces.provider import AbstractDatabaseProvider
+from app.database.interfaces.repository import AbstractItemRepository
 from sync_worker.event_models import MinioWebhookPayload
 
 HASH_KEY_HALF_SIZE = 5

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from sqlalchemy.orm import Session
 
-from app.database.repository_interface import (
+from app.database.interfaces.repository import (
     AbstractInteractionRepository,
     AbstractItemRepository,
 )

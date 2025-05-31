@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.database.provider_interface import AbstractDatabaseProvider
+from app.database.interfaces.provider import AbstractDatabaseProvider
 
 
 class PostgresProvider(AbstractDatabaseProvider):
