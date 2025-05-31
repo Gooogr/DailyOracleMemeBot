@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -9,11 +10,14 @@ class Base(DeclarativeBase):
     pass
 
 
+ItemType = Literal["image", "video"]
+
+
 class Item(Base):
     __tablename__ = "items"
     id: Mapped[str] = mapped_column(String(), primary_key=True)
     s3_name: Mapped[str] = mapped_column(String())
-    type: Mapped[str] = mapped_column(String(10))  # image or video
+    type: Mapped[ItemType] = mapped_column(String(10))  # image or video
     upload_dt: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     def __repr__(self) -> str:

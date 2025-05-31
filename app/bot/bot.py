@@ -1,13 +1,15 @@
 import os
+from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from io import BytesIO
+from typing import Callable, Optional
 
 import telebot
 from loguru import logger
 from telebot.types import Message
 
 from app.database.exceptions import DatabaseError, ItemNotFoundError
-from app.database.models import Item
+from app.database.models import Item, ItemType
 from app.service.facade import MemeOracleService
 from app.storage.exceptions import ObjectNotFoundError, StorageError
 
@@ -21,16 +23,20 @@ class SendStatus(Enum):
     UNKNOWN_ERROR = 6
 
 
+@dataclass
 class InteractionResult:
-    def __init__(self, status: SendStatus, item: Optional[Item] = None, reason: Optional[str] = None):
-        self.status = status
-        self.item = item
-        self.reason = reason
+    status: SendStatus
+    item: Optional[Item] = None
+    reason: Optional[str] = None
+    file: Optional[BytesIO] = None
 
 
 class AccessControl:
-    def __init__(self, env_var: str = "AUTHORIZED_TESTERS_TG_IDS") -> None:
-        self.allowed_ids = self._parse_env(env_var)
+
+    env_key = "AUTHORIZED_TESTERS_TG_IDS"
+
+    def __init__(self) -> None:
+        self.allowed_ids = self._parse_env(self.env_key)
 
     @staticmethod
     def _parse_env(env_var: str) -> set:
@@ -68,7 +74,6 @@ class CommandHandler:
 
     def random(self, message: Message) -> None:
         user_id = message.from_user.id
-        chat_id = message.chat.id
 
         if not self.access.is_authorized(user_id):
             self.bot.reply_to(message, "Unknown command.")
@@ -87,13 +92,12 @@ class CommandHandler:
             self.bot.reply_to(message, "No prophecies found.")
             return
 
-        result = self.sender.send_item(chat_id, user_id, item)
+        result = self.sender.send_item(message, item)
         if result.status != SendStatus.SUCCESS:
             self.bot.reply_to(message, "Failed to send object")
 
     def ask_oracle(self, message: Message) -> None:
         user_id = message.from_user.id
-        chat_id = message.chat.id
 
         items = self.service.get_candidate_items(user_id)
         if items is None:
@@ -106,7 +110,7 @@ class CommandHandler:
             return
 
         for item in items:
-            result = self.sender.send_item(chat_id, user_id, item)
+            result = self.sender.send_item(message, item)
             if result.status == SendStatus.SUCCESS:
                 try:
                     self.service.log_interaction(user_id, item.id)
@@ -124,32 +128,44 @@ class TelegramSender:
         self.bot = bot
         self.service = service
 
-    def send_item(self, chat_id: int, user_id: int, item: Item) -> InteractionResult:
+    def send_item(self, message: Message, item: Item) -> InteractionResult:
+        get_result = self._get_object(item)
+        if get_result.status != SendStatus.SUCCESS:
+            return get_result
+        return self._send_object(message, item, get_result.file)
+
+    def _get_object(self, item: Item) -> InteractionResult:
         try:
             s3_object = self.service.get_object(item.s3_name)
+            return InteractionResult(status=SendStatus.SUCCESS, item=item, file=s3_object)
         except (ObjectNotFoundError, StorageError) as e:
-            logger.error(f"S3 object error ({item.s3_name}) for user {user_id}: {e}")
+            logger.error(f"S3 object error for object {item.s3_name}: {e}")
             return InteractionResult(status=SendStatus.S3_ERROR, item=item, reason=str(e))
         except Exception as e:
-            logger.error(f"Unexpected S3 error for {item.s3_name} to {user_id}: {e}")
+            logger.error(f"Unexpected S3 error for object {item.s3_name}: {e}")
             return InteractionResult(status=SendStatus.UNKNOWN_ERROR, item=item, reason=str(e))
 
-        try:
-            if item.type == "image":
-                self.bot.send_photo(chat_id, s3_object)
-            elif item.type == "video":
-                self.bot.send_video(chat_id, s3_object)
-            else:
-                logger.error(f"Invalid item type '{item.type}' for item: {item}")
-                return InteractionResult(status=SendStatus.INVALID_TYPE, item=item, reason="Invalid type")
+    def _send_object(self, message: Message, item: Item, s3_object: BytesIO) -> InteractionResult:
+        user_id = message.from_user.id
+        chat_id = message.chat.id
+        send_method = self._get_send_method(item.type)
+        if send_method is None:
+            logger.error(f"Invalid item type '{item.type}' for item: {item}")
+            return InteractionResult(status=SendStatus.INVALID_TYPE, item=item, reason="Invalid type")
 
+        try:
+            send_method(chat_id, s3_object)
             logger.info(f"Sent {item.type} to {user_id}, item: {item}")
             return InteractionResult(status=SendStatus.SUCCESS, item=item)
-
         except telebot.apihelper.ApiTelegramException as e:
             logger.error(f"Telegram error for {item.s3_name} to {user_id}: {e}")
             return InteractionResult(status=SendStatus.TELEGRAM_ERROR, item=item, reason=str(e))
-
         except Exception as e:
             logger.error(f"Unexpected Telegram error for {item.s3_name} to {user_id}: {e}")
             return InteractionResult(status=SendStatus.UNKNOWN_ERROR, item=item, reason=str(e))
+
+    def _get_send_method(self, item_type: ItemType) -> Optional[Callable]:
+        return {
+            "image": self.bot.send_photo,
+            "video": self.bot.send_video,
+        }.get(item_type)
