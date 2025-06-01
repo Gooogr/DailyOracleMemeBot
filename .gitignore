@@ -177,8 +177,8 @@ cython_debug/
 .python-version
 
 #nginx
-docker/nginx/prod/ssl
-docker/nginx/*/logs
+docker/nginx/**/ssl
+docker/nginx/**/logs
 
 #scripts
 *.session
