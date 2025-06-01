@@ -15,7 +15,7 @@ class MemeOracleService:
         self,
         item_service: ItemService,
         interaction_service: InteractionService,
-        storage: AbstractStorage,
+        storage: AbstractStorage,  # TODO: probably wrap `get_object` in StorageService for keeping same logic
     ):
         self.item_service = item_service
         self.interaction_service = interaction_service
