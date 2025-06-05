@@ -70,4 +70,4 @@ class Interactor:
         try:
             self.service.log_interaction(user_id, item_id)
         except Exception as e:
-            logger.warning(f"Interaction logging failed for user {user_id}, item {item_id}: {e}")
+            logger.error(f"Interaction logging failed for user {user_id}, item {item_id}: {e}")
