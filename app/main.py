@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from minio import Minio
 
-from app.bot.facade import MemeOracleBot
+from app.bot.bot import MemeOracleBot
 from app.database.postgres.factory import (
     PostgresInteractionRepositoryFactory,
     PostgresItemRepositoryFactory,

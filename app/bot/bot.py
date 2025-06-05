@@ -1,9 +1,9 @@
 import telebot
 
-from app.bot.access import AccessControl
-from app.bot.handler import CommandHandler
-from app.bot.interactor import Interactor
-from app.bot.sender import Sender
+from app.bot.core.access import AccessControl
+from app.bot.core.handler import CommandHandler
+from app.bot.core.interactor import Interactor
+from app.bot.core.sender import Sender
 from app.service.facade import MemeOracleService
 
 

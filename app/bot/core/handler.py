@@ -1,10 +1,10 @@
 import telebot
 from telebot.types import Message
 
-from app.bot.access import AccessControl
-from app.bot.interactor import Interactor
+from app.bot.core.access import AccessControl
+from app.bot.core.interactor import Interactor
 from app.bot.schema.response_types import FailureResult, SendStatus, SuccessResult
-from app.bot.sender import Sender
+from app.bot.core.sender import Sender
 
 
 class CommandHandler:
