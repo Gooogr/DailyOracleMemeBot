@@ -2,23 +2,56 @@
 
 ## Deployment
 
-Generate self-signed certificate:
+### Environment Setup
+
+Create the environment configuration file:
+```bash
+cp .env.example .env
+```
+
+### Log Rotation (Nginx Only)
+
+All services use internal logging via `loguru`, except Nginx, which requires manual setup:
+
+Make the config accessible for `crontab`:
+```bash
+sudo chown root:root docker/nginx/nginx_logrotate.conf
+```
+
+Edit the crontab:
+```bash
+crontab -e
+```
+
+Add the following entry:
+```bash
+0 0 * * * cd /full/path/to/DailyOracleMemeBot && /usr/sbin/logrotate -s /tmp/nginx-logrotate.status docker/nginx/nginx_logrotate.conf
+```
+
+### SSL Certificate
+
+Generate a self-signed certificate:
 ```bash
 chmod +x ./scripts/nginx/generate-cert.sh
 ./scripts/nginx/generate-cert.sh
 ```
 
-Enable MinIO webhook setup:
+### MinIO Webhook
+
+Enable webhook integration:
 ```bash
 chmod +x ./scripts/minio/minio_setup.sh
+./scripts/minio/minio_setup.sh
 ```
 
-Create `.env` based on `.env.example`
+### Start Services
 
-Build and start the project:
+Build and launch the project:
 ```bash
 docker compose up --build
 ```
+
+---
 
 ## Monitoring
 
@@ -29,29 +62,33 @@ Create an SSH tunnel:
 ssh -L 8443:localhost:443 your-user@your-vps-ip
 ```
 
-Access via browser:
+Access services in your browser:
 - MinIO: `https://localhost:8443/`
 - Adminer: `https://localhost:8443/adminer`
 
-Ensure port `443` is blocked from external access on the VPS.
+**Note:** Ensure external access to port `443` is restricted on the VPS.
 
 ### Local Development
 
-If running the production config locally:
+If using the production configuration locally:
 - MinIO: `https://localhost:443/`
 - Adminer: `https://localhost:443/adminer`
 
+---
+
 ## Scripts
 
-### Telegram Parser
+### Telegram Media Parser
 
-Download media from a Telegram channel within a date range:
+Download media from a tg channel for a specific date range:
 ```bash
 python3 scripts/tg_parser/main.py -s 2025-05-10 -e 2025-05-11
 ```
 
+---
+
 ## TODO
-- Add Alembic container for migrations
-- Add fallback sync script between MinIO and Postgres `items` table
-- Store hashed `user_id` instead of raw integer (?)
-- Add logs monitoring
+
+- Add Alembic container for schema migrations  
+- Implement fallback sync between MinIO and the Postgres `items` table  
+- Store hashed `user_id` instead of raw integers (TBD)
