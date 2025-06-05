@@ -1,6 +1,6 @@
 services:
 
-  # Data base
+  # Database
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -65,6 +65,8 @@ services:
       context: .
       dockerfile: docker/sync_worker/Dockerfile
     restart: unless-stopped
+    volumes:
+      - ./logs/sync_worker:/app/logs
     depends_on:
       - postgres
       - minio
@@ -80,6 +82,8 @@ services:
       context: .
       dockerfile: docker/telegram_bot/Dockerfile
     restart: unless-stopped
+    volumes:
+      - ./logs/telegram_bot:/app/logs
     env_file:
       - .env
     depends_on:
@@ -99,7 +103,7 @@ services:
       - "443:443"
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/nginx/logs:/var/log/nginx/
+      - ./logs/nginx:/var/log/nginx/
       - ./docker/nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - minio
