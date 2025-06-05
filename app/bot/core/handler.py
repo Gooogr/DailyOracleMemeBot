@@ -3,8 +3,14 @@ from telebot.types import Message
 
 from app.bot.core.access import AccessControl
 from app.bot.core.interactor import Interactor
-from app.bot.schema.response_types import FailureResult, SendStatus, SuccessResult
 from app.bot.core.sender import Sender
+from app.bot.schema.response_types import (
+    GetStatus,
+    GetSuccess,
+    SendFailure,
+    SendStatus,
+    SendSuccess,
+)
 
 
 class CommandHandler:
@@ -34,26 +40,30 @@ class CommandHandler:
             return
 
         result = self.interactor.get_random()
-        if isinstance(result, FailureResult):
+        if isinstance(result, SendFailure):
             self._reply(message, result.reason or "Something went wrong.")
             return
 
-        self.sender.send(message, result.item, result.file)
+        result = self.sender.send(message, result.item, result.file, "random")
+        if result.status != SendStatus.SUCCESS:
+            self._reply(message, str(result.status))
 
     def ask_oracle(self, message: Message) -> None:
         user_id = message.from_user.id
-        result = self.interactor.get_next_available(user_id)
+        get_result = self.interactor.get_next_available(user_id)
 
-        if isinstance(result, SuccessResult):
-            self.sender.send(message, result.item, result.file)
+        if not isinstance(get_result, GetSuccess):
+            match get_result.status:
+                case GetStatus.LIMIT_REACHED:
+                    self._reply(message, "Oracle is tired, come back tomorrow.")
+                case GetStatus.NO_CANDIDATES:
+                    self._reply(message, "No prophecies found.")
+                case _:
+                    self._reply(message, "Something went wrong.")
             return
 
-        match result.status:
-            case SendStatus.LIMIT_REACHED:
-                self._reply(message, "Oracle is tired, come back tomorrow.")
-            case SendStatus.NO_CANDIDATES:
-                self._reply(message, "No prophecies found.")
-            case SendStatus.SEND_FAILED:
-                self._reply(message, "Failed to send prophecy.")
-            case _:
-                self._reply(message, "Something went wrong.")
+        send_result = self.sender.send(message, get_result.item, get_result.file, "ask_oracle")
+        if send_result.status == SendStatus.SUCCESS:
+            self.interactor.log_intercation(user_id, get_result.item.id)
+        else:
+            self._reply(message, "Oracle is confused, try again.")

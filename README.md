@@ -91,4 +91,5 @@ python3 scripts/tg_parser/main.py -s 2025-05-10 -e 2025-05-11
 
 - Add Alembic container for schema migrations  
 - Implement fallback sync between MinIO and the Postgres `items` table  
-- Store hashed `user_id` instead of raw integers (TBD)
+- Store hashed `user_id` instead of raw integers
+- avoid 'latest' tags for docker images. Select versions.
