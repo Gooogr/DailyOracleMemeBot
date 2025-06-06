@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import cast
+from typing import Optional, cast
 
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -31,11 +31,11 @@ class PostgresItemRepository(AbstractItemRepository):
             self.session.rollback()
             raise ItemAlreadyExistsError(item_id) from e
 
-    def read(self, item_id: str) -> Item:
+    def read(self, item_id: str) -> Optional[Item]:
         try:
             item = self.session.query(Item).filter(Item.id == item_id).one_or_none()
             if not item:
-                raise ItemNotFoundError(item_id)
+                return None
             return cast(Item, item)  # cast() to supress typehint warning
         except SQLAlchemyError as e:
             self.session.rollback()
@@ -65,8 +65,8 @@ class PostgresItemRepository(AbstractItemRepository):
         LIMIT :k;
         """
         try:
-            InteractionsAll = aliased(Interaction)
-            InteractionsUser = aliased(Interaction)
+            InteractionsAll = aliased(Interaction)  # pylint: disable=C0103
+            InteractionsUser = aliased(Interaction)  # pylint: disable=C0103
 
             query = (
                 self.session.query(Item)

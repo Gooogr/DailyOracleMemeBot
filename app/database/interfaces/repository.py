@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Optional
 
 from app.database.models import Interaction, Item
 
@@ -10,7 +11,7 @@ class AbstractItemRepository(ABC):
         pass
 
     @abstractmethod
-    def read(self, item_id: str) -> Item:
+    def read(self, item_id: str) -> Optional[Item]:
         pass
 
     @abstractmethod

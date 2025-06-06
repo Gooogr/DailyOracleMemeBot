@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
-from typing import Optional, Union
+from typing import Optional
 
 from app.database.models import Item
 
@@ -10,28 +10,60 @@ class SendStatus(Enum):
     SUCCESS = 1
     INVALID_TYPE = 2
     TELEGRAM_ERROR = 3
-    S3_ERROR = 4
-    DB_ERROR = 5
-    UNKNOWN_ERROR = 6
-    LIMIT_REACHED = 7
-    NO_CANDIDATES = 8
-    SEND_FAILED = 9
+    UNKNOWN_ERROR = 4
 
 
 @dataclass
-class InteractionResultBase:
+class SendResultBase:
     status: SendStatus
 
 
 @dataclass
-class SuccessResult(InteractionResultBase):
-    item: Item
+class SendSuccess(SendResultBase):
     file: BytesIO
+    item: Item
 
 
 @dataclass
-class FailureResult(InteractionResultBase):
+class SendFailure(SendResultBase):
     reason: Optional[str] = None
+    item: Optional[Item] = None
 
 
-InteractionResult = Union[SuccessResult, FailureResult]
+SendResult = SendFailure | SendSuccess
+
+
+# Interactions between application and storage/database layers
+class GetStatus(Enum):
+    SUCCESS = 1
+    S3_ERROR = 2
+    DB_ERROR = 3
+    LIMIT_REACHED = 4
+    NO_CANDIDATES = 5
+    UNKNOWN_ERROR = 6
+
+
+@dataclass
+class GetResultBase:
+    status: GetStatus
+
+
+@dataclass
+class GetSuccess(GetResultBase):
+    file: BytesIO
+    item: Item
+
+
+@dataclass
+class GetFailure(GetResultBase):
+    reason: Optional[str] = None
+    item: Optional[Item] = None
+
+
+@dataclass
+class GetSuccessBatch:
+    objects: list[GetSuccess]
+    status: GetStatus = GetStatus.SUCCESS
+
+
+GetResult = GetSuccess | GetFailure | GetSuccessBatch

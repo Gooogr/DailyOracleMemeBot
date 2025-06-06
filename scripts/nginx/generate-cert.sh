@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NGINX_FOLDER_PATH='./docker/nginx/prod'
+NGINX_FOLDER_PATH='./docker/nginx'
 
 mkdir -p $NGINX_FOLDER_PATH/ssl
 openssl req -x509 -nodes -days 365 \

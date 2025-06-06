@@ -37,7 +37,7 @@ class TelegramMediaDownloader:
             chat = await self.client.get_chat(self.cfg.invite_link)
             print(f"Resolved channel: {chat.title} (id: {chat.id})")
         except Exception as e:
-            raise ValueError(f"Could not resolve chat from invite: {e}")
+            raise ValueError(f"Could not resolve chat from invite: {e}") from e
 
     async def _download_channel_media(self):
         count = 0
@@ -51,7 +51,7 @@ class TelegramMediaDownloader:
                     await self.client.download_media(msg, file_name=filepath)
                     count += 1
                     print(f"💾 Saved file #{count}: {filepath}")
-                except Exception as e:
+                except Exception as e:  # pylint: disable=W0718
                     print(f"⚠️ Error downloading file to {filepath}: {e}")
 
     @staticmethod

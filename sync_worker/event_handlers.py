@@ -40,6 +40,7 @@ class MinioEventHandler:
         item_id = self.key_to_id(key)
         object_type = self.infer_type(key)
         object_name = os.path.basename(key)
+
         if not repo.read(item_id):
             repo.create(item_id, object_name, object_type, timestamp)
 
@@ -51,7 +52,9 @@ class MinioEventHandler:
     @staticmethod
     def infer_type(key: str) -> str:
         key = key.lower()
-        if key.endswith((".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".avif")):
+        # TODO: should we handle ".gif" like video? Check it.
+        # supported formats: https://core.telegram.org/type/storage.FileType
+        if key.endswith((".jpg", ".jpeg", ".png", ".webp")):
             return "image"
         if key.endswith((".mp4", ".webm", ".mov", ".mkv")):
             return "video"

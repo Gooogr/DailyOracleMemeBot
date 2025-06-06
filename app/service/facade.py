@@ -15,7 +15,7 @@ class MemeOracleService:
         self,
         item_service: ItemService,
         interaction_service: InteractionService,
-        storage: AbstractStorage,
+        storage: AbstractStorage,  # TODO: probably wrap `get_object` in StorageService for keeping same logic
     ):
         self.item_service = item_service
         self.interaction_service = interaction_service
@@ -26,7 +26,7 @@ class MemeOracleService:
             return None
         return self.item_service.get_top_k_unseen_items(user_id, self.items_candidates_amount)
 
-    def get_random_item(self) -> Optional[Item]:
+    def get_random_item(self) -> Item:
         return self.item_service.get_random_item()
 
     def get_object(self, object_name: str) -> BytesIO:
