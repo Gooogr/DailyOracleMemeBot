@@ -36,6 +36,6 @@ class Sender:
         except telebot.apihelper.ApiTelegramException as e:
             logger.error(f"Telegram error for {item.s3_name} to {user_id}: {e}")
             return SendFailure(status=SendStatus.TELEGRAM_ERROR, reason=str(e))
-        except Exception as e:
+        except Exception as e:  # pylint: disable=W0718
             logger.error(f"Unexpected Telegram error for {item.s3_name} to {user_id}: {e}")
             return SendFailure(status=SendStatus.UNKNOWN_ERROR, reason=str(e))

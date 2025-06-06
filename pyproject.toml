@@ -68,7 +68,9 @@ ignore_missing_imports = true
 disable = [
     "missing-module-docstring",   # C0114
     "missing-class-docstring",    # C0115
-    "missing-function-docstring"  # C0116
+    "missing-function-docstring", # C0116
+    "too-few-public-methods",     # R0903
+    "too-many-arguments",         # R0913
 ]
 
 [tool.pylint.'FORMAT']

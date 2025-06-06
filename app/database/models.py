@@ -10,15 +10,17 @@ class Base(DeclarativeBase):
     pass
 
 
-ItemType = Literal["image", "video"]
+ItemType = Literal["image", "video", "unknown"]
 
 
 class Item(Base):
     __tablename__ = "items"
     id: Mapped[str] = mapped_column(String(), primary_key=True)
     s3_name: Mapped[str] = mapped_column(String())
-    type: Mapped[ItemType] = mapped_column(String(10))  # image or video
-    upload_dt: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    type: Mapped[ItemType] = mapped_column(String(10))
+    upload_dt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()  # pylint: disable=E1102
+    )
 
     def __repr__(self) -> str:
         return (
@@ -34,7 +36,9 @@ class Interaction(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(Integer())
     item_id: Mapped[str] = mapped_column(ForeignKey("items.id"))
-    interaction_dt: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    interaction_dt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()  # pylint: disable=E1102
+    )
 
     def __repr__(self) -> str:
         return (

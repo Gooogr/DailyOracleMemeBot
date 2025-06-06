@@ -65,8 +65,8 @@ class PostgresItemRepository(AbstractItemRepository):
         LIMIT :k;
         """
         try:
-            InteractionsAll = aliased(Interaction)
-            InteractionsUser = aliased(Interaction)
+            InteractionsAll = aliased(Interaction)  # pylint: disable=C0103
+            InteractionsUser = aliased(Interaction)  # pylint: disable=C0103
 
             query = (
                 self.session.query(Item)

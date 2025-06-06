@@ -64,7 +64,7 @@ class CommandHandler:
         for candidate in get_result.objects:
             send_result = self.sender.send(message, candidate.item, candidate.file, "ask_oracle")
             if send_result.status == SendStatus.SUCCESS:
-                self.interactor.log_intercation(user_id, candidate.item.id)
+                self.interactor.log_interaction(user_id, candidate.item.id)
                 return
 
         self._reply(message, "Oracle is confused, try again.")

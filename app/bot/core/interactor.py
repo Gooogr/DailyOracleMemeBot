@@ -26,7 +26,7 @@ class Interactor:
         except (ObjectNotFoundError, StorageError) as e:
             logger.error(f"S3 object error for object {item.s3_name}: {e}")
             return GetFailure(status=GetStatus.S3_ERROR, reason=str(e))
-        except Exception as e:
+        except Exception as e:  # pylint: disable=W0718
             logger.error(f"Unexpected S3 error for object {item.s3_name}: {e}")
             return GetFailure(status=GetStatus.UNKNOWN_ERROR, reason=str(e))
 
@@ -36,7 +36,7 @@ class Interactor:
         except (DatabaseError, ItemNotFoundError) as e:
             logger.warning(f"Get random item error: {e}")
             return GetFailure(status=GetStatus.DB_ERROR, reason="Failed to get random item.")
-        except Exception as e:
+        except Exception as e:  # pylint: disable=W0718
             logger.exception(f"Unexpected error in get_random: {e}")
             return GetFailure(status=GetStatus.UNKNOWN_ERROR, reason="Unexpected error occurred.")
 
@@ -67,8 +67,8 @@ class Interactor:
 
         return GetSuccessBatch(objects=valid_objects)
 
-    def log_intercation(self, user_id: int, item_id: str) -> None:
+    def log_interaction(self, user_id: int, item_id: str) -> None:
         try:
             self.service.log_interaction(user_id, item_id)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=W0718
             logger.error(f"Interaction logging failed for user {user_id}, item {item_id}: {e}")
