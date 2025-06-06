@@ -1,8 +1,8 @@
 import os
 
+import telebot
 from dotenv import load_dotenv
 from minio import Minio
-import telebot
 
 from app.bot.bot import MemeOracleBot
 from app.database.postgres.factory import (
