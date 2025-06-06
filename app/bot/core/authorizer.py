@@ -1,7 +1,7 @@
 import os
 
 
-class AccessControl:
+class Authorizer:
     env_key = "AUTHORIZED_TESTERS_TG_IDS"
 
     def __init__(self) -> None:

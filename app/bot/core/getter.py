@@ -15,7 +15,7 @@ from app.utils.logger_setup import setup_logger
 setup_logger("telegram_bot")
 
 
-class Interactor:
+class Getter:
     def __init__(self, service: MemeOracleService):
         self.service = service
 
@@ -66,9 +66,3 @@ class Interactor:
             return GetFailure(status=GetStatus.UNKNOWN_ERROR, reason="All candidates failed")
 
         return GetSuccessBatch(objects=valid_objects)
-
-    def log_interaction(self, user_id: int, item_id: str) -> None:
-        try:
-            self.service.log_interaction(user_id, item_id)
-        except Exception as e:  # pylint: disable=W0718
-            logger.error(f"Interaction logging failed for user {user_id}, item {item_id}: {e}")

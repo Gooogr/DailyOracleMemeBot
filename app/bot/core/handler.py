@@ -1,9 +1,10 @@
 import telebot
 from telebot.types import Message
 
-from app.bot.core.access import AccessControl
-from app.bot.core.interactor import Interactor
+from app.bot.core.authorizer import Authorizer
+from app.bot.core.getter import Getter
 from app.bot.core.sender import Sender
+from app.bot.core.writer import Writer
 from app.bot.schema.response_types import (
     GetFailure,
     GetStatus,
@@ -16,14 +17,16 @@ class CommandHandler:
     def __init__(
         self,
         bot: telebot.TeleBot,
-        access: AccessControl,
-        interactor: Interactor,
+        authorizer: Authorizer,
+        getter: Getter,
         sender: Sender,
+        writer: Writer,
     ):
         self.bot = bot
-        self.access = access
-        self.interactor = interactor
+        self.access = authorizer
+        self.getter = getter
         self.sender = sender
+        self.writer = writer
 
     def _reply(self, message: Message, text: str) -> None:
         self.bot.reply_to(message, text)
@@ -38,7 +41,7 @@ class CommandHandler:
             self._reply(message, "Unknown command.")
             return
 
-        get_result = self.interactor.get_random()
+        get_result = self.getter.get_random()
         if isinstance(get_result, GetFailure):
             self._reply(message, get_result.reason or "Something went wrong.")
             return
@@ -49,7 +52,7 @@ class CommandHandler:
 
     def ask_oracle(self, message: Message) -> None:
         user_id = message.from_user.id
-        get_result = self.interactor.get_candidates(user_id)
+        get_result = self.getter.get_candidates(user_id)
 
         if not isinstance(get_result, GetSuccessBatch):
             match get_result.status:
@@ -64,7 +67,7 @@ class CommandHandler:
         for candidate in get_result.objects:
             send_result = self.sender.send(message, candidate.item, candidate.file, "ask_oracle")
             if send_result.status == SendStatus.SUCCESS:
-                self.interactor.log_interaction(user_id, candidate.item.id)
+                self.writer.interaction(user_id, candidate.item.id)
                 return
 
         self._reply(message, "Oracle is confused, try again.")
