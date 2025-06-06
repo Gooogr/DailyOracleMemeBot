@@ -5,11 +5,10 @@ from app.bot.core.access import AccessControl
 from app.bot.core.interactor import Interactor
 from app.bot.core.sender import Sender
 from app.bot.schema.response_types import (
+    GetFailure,
     GetStatus,
-    GetSuccess,
-    SendFailure,
+    GetSuccessBatch,
     SendStatus,
-    SendSuccess,
 )
 
 
@@ -39,31 +38,33 @@ class CommandHandler:
             self._reply(message, "Unknown command.")
             return
 
-        result = self.interactor.get_random()
-        if isinstance(result, SendFailure):
-            self._reply(message, result.reason or "Something went wrong.")
+        get_result = self.interactor.get_random()
+        if isinstance(get_result, GetFailure):
+            self._reply(message, get_result.reason or "Something went wrong.")
             return
 
-        result = self.sender.send(message, result.item, result.file, "random")
-        if result.status != SendStatus.SUCCESS:
-            self._reply(message, str(result.status))
+        send_result = self.sender.send(message, get_result.item, get_result.file, "random")
+        if send_result.status != SendStatus.SUCCESS:
+            self._reply(message, str(send_result.status))
 
     def ask_oracle(self, message: Message) -> None:
         user_id = message.from_user.id
-        get_result = self.interactor.get_next_available(user_id)
+        get_result = self.interactor.get_candidates(user_id)
 
-        if not isinstance(get_result, GetSuccess):
+        if not isinstance(get_result, GetSuccessBatch):
             match get_result.status:
                 case GetStatus.LIMIT_REACHED:
                     self._reply(message, "Oracle is tired, come back tomorrow.")
                 case GetStatus.NO_CANDIDATES:
                     self._reply(message, "No prophecies found.")
                 case _:
-                    self._reply(message, "Something went wrong.")
+                    self._reply(message, "Something went wrong, try again later.")
             return
 
-        send_result = self.sender.send(message, get_result.item, get_result.file, "ask_oracle")
-        if send_result.status == SendStatus.SUCCESS:
-            self.interactor.log_intercation(user_id, get_result.item.id)
-        else:
-            self._reply(message, "Oracle is confused, try again.")
+        for candidate in get_result.objects:
+            send_result = self.sender.send(message, candidate.item, candidate.file, "ask_oracle")
+            if send_result.status == SendStatus.SUCCESS:
+                self.interactor.log_intercation(user_id, candidate.item.id)
+                return
+
+        self._reply(message, "Oracle is confused, try again.")

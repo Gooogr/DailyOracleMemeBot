@@ -26,7 +26,7 @@ class MemeOracleService:
             return None
         return self.item_service.get_top_k_unseen_items(user_id, self.items_candidates_amount)
 
-    def get_random_item(self) -> Optional[Item]:
+    def get_random_item(self) -> Item:
         return self.item_service.get_random_item()
 
     def get_object(self, object_name: str) -> BytesIO:

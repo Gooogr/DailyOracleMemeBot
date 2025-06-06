@@ -40,6 +40,7 @@ class MinioEventHandler:
         item_id = self.key_to_id(key)
         object_type = self.infer_type(key)
         object_name = os.path.basename(key)
+
         if not repo.read(item_id):
             repo.create(item_id, object_name, object_type, timestamp)
 

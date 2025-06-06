@@ -2,10 +2,9 @@ from loguru import logger
 
 from app.bot.schema.response_types import (
     GetFailure,
-    GetFailureBatch,
-    GetResult,
     GetStatus,
     GetSuccess,
+    GetSuccessBatch,
 )
 from app.database.exceptions import DatabaseError, ItemNotFoundError
 from app.database.models import Item
@@ -46,7 +45,7 @@ class Interactor:
 
         return self._get_file(item)
 
-    def get_next_available(self, user_id: int) -> GetResult:
+    def get_candidates(self, user_id: int) -> GetFailure | GetSuccessBatch:
         items = self.service.get_candidate_items(user_id)
 
         if items is None:
@@ -57,14 +56,16 @@ class Interactor:
             logger.warning(f"No candidates for user {user_id}")
             return GetFailure(status=GetStatus.NO_CANDIDATES)
 
-        failures = []
+        valid_objects: list[GetSuccess] = []
         for item in items:
-            result = self._get_file(item)
-            if isinstance(result, GetSuccess):
-                return result
-            failures.append(result)
+            get_result = self._get_file(item)
+            if isinstance(get_result, GetSuccess):
+                valid_objects.append(get_result)
 
-        return GetFailureBatch(failures=failures)
+        if not valid_objects:
+            return GetFailure(status=GetStatus.UNKNOWN_ERROR, reason="All candidates failed")
+
+        return GetSuccessBatch(objects=valid_objects)
 
     def log_intercation(self, user_id: int, item_id: str) -> None:
         try:

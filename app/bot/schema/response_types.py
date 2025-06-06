@@ -61,8 +61,9 @@ class GetFailure(GetResultBase):
 
 
 @dataclass
-class GetFailureBatch:
-    failures: list[GetFailure]
+class GetSuccessBatch:
+    objects: list[GetSuccess]
+    status: GetStatus = GetStatus.SUCCESS
 
 
-GetResult = GetSuccess | GetFailure | GetFailureBatch
+GetResult = GetSuccess | GetFailure | GetSuccessBatch
