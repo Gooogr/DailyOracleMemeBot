@@ -30,18 +30,10 @@ Add the following entry:
 
 ### SSL Certificate
 
-Generate a self-signed certificate:
+Add a self-signed certificate:
 ```bash
 chmod +x ./scripts/nginx/generate-cert.sh
 ./scripts/nginx/generate-cert.sh
-```
-
-### MinIO Webhook
-
-Enable webhook integration:
-```bash
-chmod +x ./scripts/minio/minio_setup.sh
-./scripts/minio/minio_setup.sh
 ```
 
 ### Start Services
